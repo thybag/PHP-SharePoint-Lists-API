@@ -30,25 +30,25 @@ To return only the first 10 items from a list use:
 
 To return all the items from a list where surname is smith use:
 
-    $sp->read('<list_name>',null,array('surname'=>'smith'); 
+    $sp->read('<list_name>',null,array('surname'=>'smith')); 
 
 To return the first 5 items where the surname is smith and the age is 40
 
-    $sp->read('<list_name>',5,array('surname'=>'smith','age'=>40); 
+    $sp->read('<list_name>',5,array('surname'=>'smith','age'=>40)); 
 
 
 #### Adding to a list
 
 To add a new item to a list you can use either the method "write" or "insert" (both function identically). Creating a new record in a List with the headings forename, surname, age, phone may look like:
 
-    $sp->write('<list_name>', array('forename'=>'Bob','surname =>'Smith', 'age'=>40, 'phone'=>'(00000) 000000' ));
+    $sp->write('<list_name>', array('forename'=>'Bob','surname' =>'Smith', 'age'=>40, 'phone'=>'(00000) 000000' ));
 
 
 #### Editing Rows
 
 To edit a row you need to have its ID. Assuming the above row had the ID 5, we could change Bob's name to James with:
 
-    $sp->update('<list_name>','5, array('forename'=>'James'));
+    $sp->update('<list_name>','5', array('forename'=>'James'));
 
 
 #### Deleting Rows
