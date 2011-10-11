@@ -38,8 +38,8 @@ class sharepointAPI{
 	private $spPass;
 	private $wsdl;
 
-	//Maxium rows to return from a DB (Defualt is 100 if this param is not provided)
-	const MAX_ROWS = 1000;
+	//Maxium rows to return from a DB (Default is 100 if this param is not provided)
+	private $MAX_ROWS = 10000;
 	
 	/**
 	 * Constructor
@@ -66,7 +66,7 @@ class sharepointAPI{
 	 */
 	public function read($list, $limit = 0, $query = null){
 		//Check limit is set
-		if($limit==0 || $limit == null)$limit = MAX_ROWS;
+		if($limit==0 || $limit == null)$limit = $MAX_ROWS;
 		//Create Query XML is query is being used
 		$queryXML = '';
 		//If query is set pass it to the query builder
