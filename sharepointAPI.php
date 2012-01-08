@@ -66,7 +66,7 @@ class sharepointAPI{
 	 */
 	public function read($list, $limit = 0, $query = null){
 		//Check limit is set
-		if($limit==0 || $limit == null)$limit = $MAX_ROWS;
+		if($limit==0 || $limit == null)$limit = $this->MAX_ROWS;
 		//Create Query XML is query is being used
 		$queryXML = '';
 		//If query is set pass it to the query builder
