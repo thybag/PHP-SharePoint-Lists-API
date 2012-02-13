@@ -5,11 +5,11 @@
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
- * @version 2011.10.6
+ * @version 2012.02.13
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
- * Tested against sharepoint 2007 API's
+ * Tested against the sharepoint 2007 API
  *
  * WSDL file needed will be located at: sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL
  *
@@ -33,7 +33,7 @@
  * CRUD can be used for multiple actions on a single list.
  * $list = $api->CRUD('<list_name>');
  * $list->read(10);
- * $list->create(array( 'id'=>1, 'name'=>'Fred' ));
+ * $list->create(array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
  */
 
 class sharepointAPI{
