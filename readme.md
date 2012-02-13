@@ -1,4 +1,4 @@
-# PHP Sharepoint Lists API#
+# PHP SharePoint Lists API#
 
 The PHP SharePoint Lists API is designed to make working with SharePoint List in PHP easier and more straight forward (no need to worry about SOAP).
 The current version of the class only includes methods to add, edit, remove and read from existing SharePoint lists. 
@@ -35,6 +35,12 @@ To return all the items from a list where surname is smith use:
 To return the first 5 items where the surname is smith and the age is 40
 
     $sp->read('<list_name>',5,array('surname'=>'smith','age'=>40)); 
+	
+By default List item's are returned in the form of an Array. If you would prefer the results to return in object form, use 
+
+	$sp->setReturnType('object'); 
+	
+Before invoking the any read operations.
 
 
 #### Adding to a list

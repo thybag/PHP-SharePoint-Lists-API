@@ -2,7 +2,7 @@
 /**
  * SharepointAPI
  *
- * Simple PHP API for reading/writeing and modifying SharePoint list items.
+ * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
  * @version 2011.10.6
@@ -18,7 +18,7 @@
  *
  * Read:
  * $sp->read('<list_name>');
- * $sp->read('<list_name>',500); //Return 500 records
+ * $sp->read('<list_name>', 500); //Return 500 records
  * $sp->read('<list_name>', null, array('<col_name>'=>'<col_value>'); // Filter on col_name = col_value
  *
  * Write: (insert)
@@ -37,15 +37,16 @@ class sharepointAPI{
 	private $spUser;
 	private $spPass;
 	private $wsdl;
+	private $returnType = 0;
 
-	//Maxium rows to return from a DB (Default is 100 if this param is not provided)
+	//Maximum rows to return from a List 
 	private $MAX_ROWS = 10000;
 	
 	/**
 	 * Constructor
 	 *
-	 * @param User account to use to authenticate with. (Must have read/write/edit permissions to given Lists)
-	 * @param Password for authenticating user account.
+	 * @param User account to authenticate with. (Must have read/write/edit permissions to given Lists)
+	 * @param Password to use with authenticating account.
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 */
 	public function __construct($sp_user, $sp_pass, $sp_WSDL)
@@ -64,16 +65,17 @@ class sharepointAPI{
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read($list, $limit = 0, $query = null){
+	public function read($list, $limit = null, $query = null){
 		//Check limit is set
-		if($limit==0 || $limit == null)$limit = $this->MAX_ROWS;
+		if($limit==0 || $limit == null) $limit = $this->MAX_ROWS;
 		//Create Query XML is query is being used
 		$queryXML = '';
 		//If query is set pass it to the query builder
 		if($query != null){
 			$queryXML = $this->queryXML($query);
 		}
-		//Setup basic XML for query
+		//Setup basic XML for quering a sharepoint list.
+		//If rowLimit is not provided sharepoint will defualt to a limit of 100 items.
 		$CAML = '
 			<GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
 			  <listName>'.$list.'</listName> 
@@ -91,12 +93,13 @@ class sharepointAPI{
 		$rawXML ='';
 		//Attempt to query Sharepoint
 		try{
-			$rawXML = $soap->GetListItems($xmlvar)->GetListItemsResult->any;
+			$result = $this->xmlHandler($soap->GetListItems($xmlvar)->GetListItemsResult->any);
 		}catch(SoapFault $fault){
 			$this->onError($fault);
+			$result = null;
 		}
 		//Return a XML as nice clean Array
-		return $this->xmlToArray($rawXML);
+		return $result;
 
 	}
 	
@@ -108,7 +111,7 @@ class sharepointAPI{
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function write($list,$data){
+	public function write($list, $data){
 	
 		//Create SOAP Object
 		$soap = $this->createSoapObject();
@@ -134,16 +137,17 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any;
+			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
 		}catch(SoapFault $fault){
 			$this->onError($fault);
+			$result = null;
 		}
 		//Return a XML as nice clean Array
-		return $this->xmlToArray($result);
+		return $result;
 	}
 	//Alias
-	public function insert($list,$data){
-		return $this->write($list,$data); 
+	public function insert($list, $data){
+		return $this->write($list, $data); 
 	}
 	
 	/**
@@ -181,12 +185,13 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any;	
+			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		}catch(SoapFault $fault){
 			$this->onError($fault);
+			$result = null;
 		}
 		//Return a XML as nice clean Array
-		return $this->xmlToArray($result);
+		return $result;
 	}
 	/**
 	 * Delete
@@ -216,22 +221,39 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any;	
+			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 		}
 		//Return a XML as nice clean Array
-		return $this->xmlToArray($result);
+		return $result;
 	}
 	
 	/**
-	 * xmlToArray
-	 * Change the XML returned from SOAP in to a nice clean array
+	 * setReturnType
+	 * Change the dataType used to store List items.
+	 * Array or Object.
+	 *
+	 * @param $type
+	 */
+	public function setReturnType($type){
+		if(trim(strtolower($type)) == 'object'){
+			$this->returnType = 1;
+		}else{
+			$this->returnType = 0;
+		}
+	}
+	
+	/**
+	 * xmlHandler
+	 * Transform the XML returned from SOAP in to a useful datastructure.
+	 * By Defualt all sharepoint items will be represented as arrays.
+	 * Use setReturnType('object') to have them returned as objects.
 	 *
 	 * @param $rawXML XML DATA returned by SOAP
-	 * @return Array
+	 * @return Array( Array ) | Array( Object )
 	 */
-	private function xmlToArray($rawXML){
+	private function xmlHandler($rawXML){
 		//Use DOMDocument to proccess XML
 		$dom = new DOMDocument();
 		$dom->loadXML($rawXML);
@@ -242,8 +264,14 @@ class sharepointAPI{
 			$resultArray[$i] = array();
 			foreach($result->attributes as $test => $value){
 				// Re-assign all the attributes into an easy to access array
-				$resultArray[$i][str_replace('ows_','',$test)] = $result->getAttribute($test);
+				$resultArray[$i][strtolower(str_replace('ows_','',$test))] = $result->getAttribute($test);
 			}
+			//ReturnType 1 = Object. 
+			//If set, change array in to an object.
+			//
+			//Feature based on implementation by dcarbone  (See: https://github.com/dcarbone/ )
+			if($this->returnType === 1) settype($resultArray[$i], "object");
+			
 		}
 		//Check some values were actually returned
 		if(!isset($resultArray)) $resultArray = array('warning' => 'No data returned.');
@@ -259,13 +287,13 @@ class sharepointAPI{
 	 * @return XML DATA
 	 */
 	private function queryXML($q){
-		//$q = ;
+		
 		$queryString ='';
 		foreach($q as $col => $value){
 			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value></Eq>';
 		}
-		//Add and when needed to query more than 1 attribute
-		if(sizeof($q) > 1)$queryString = "<And>{$queryString}</And>";
+		//Add "and" when needed to query more than 1 attribute
+		if(sizeof($q) > 1) $queryString = "<And>{$queryString}</And>";
 
 		return "<query><Query><Where>{$queryString}</Where></Query></query>";
 	}
@@ -279,8 +307,8 @@ class sharepointAPI{
 		try{
 			return new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
 		}catch(SoapFault $fault){
-			//If we are unable to create a Soap, Client display a critical error.
-			die("Unable to establish connection with sharepoint API. Please check the user credenals are correct.");
+			//If we are unable to create a Soap Client display a Fatal error.
+			die("Fatal Error: Unable to locate WSDL file.");
 		}
 	}
 	/**
@@ -291,6 +319,8 @@ class sharepointAPI{
 	 */
 	private function onError($fault){
 		echo 'Fault code: '.$fault->faultcode.'<br/>';
-		echo 'Fault string: '.$fault->faultstring;
+		echo 'Fault string: '.$fault->faultstring.'<br/>';
+		//Add additional error info if available
+		if(isset($fault->detail->errorstring)) echo 'Details: '.$fault->detail->errorstring;
 	}
 }
