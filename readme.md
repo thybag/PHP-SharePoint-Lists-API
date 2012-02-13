@@ -71,3 +71,9 @@ want to perform multiple actions on the same list. Crud methods do not require a
 	$list->read(10);
 	$list->create(array( 'id'=>1, 'name'=>'Fred' ));
 	
+	
+#### List all Lists.
+You can get a full listing of all avaiable lists within the connected sharepoint subsite by calling:
+
+	$sp->getLists();
+	

@@ -45,6 +45,8 @@ class sharepointAPI{
 
 	//Maximum rows to return from a List 
 	private $MAX_ROWS = 10000;
+	//Place holder for soapObject/SOAP client
+	private $soapObject = null;
 	
 	/**
 	 * Constructor
@@ -58,6 +60,47 @@ class sharepointAPI{
 		$this->spUser = $sp_user;
 		$this->spPass = $sp_pass;
 		$this->wsdl = $sp_WSDL;
+		
+		//Create new SOAP Client
+		try{
+			$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
+		}catch(SoapFault $fault){
+			//If we are unable to create a Soap Client display a Fatal error.
+			die("Fatal Error: Unable to locate WSDL file.");
+		}
+		
+	}
+	
+	/**
+	 * getLists
+	 * Return an array containing all avaiable lists within this sharepoint subsite.
+	 * use set return type if you wish for this data to be provided as an object.
+	 *
+	 * @return array (array) | array (object)
+	 */
+	public function getLists(){
+		//Query Sharepoint for full listing of it's lists.
+		try{
+			$rawxml = $this->soapObject->GetListCollection()->GetListCollectionResult->any;
+		}catch(SoapFault $fault){
+			$this->onError($fault);
+		}
+		//Load XML in to DOM document and grab all list items.
+		$dom = new DOMDocument();
+		$dom->loadXML($rawxml);
+		$nodes = $dom->getElementsByTagName("List");
+		//Format data in to array or object
+		foreach($nodes as $counter => $node){
+			foreach($node->attributes as $attribute => $value){
+				$results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
+			}
+			//Make object if needed
+			if($this->returnType === 1) settype($results[$counter], "object");
+		}
+		//Add error array if stuff goes wrong.
+		if(!isset($results)) $results = array('warning' => 'No data returned.');
+		
+		return $results;
 	}
 
 	/**
@@ -90,14 +133,12 @@ class sharepointAPI{
 			  </queryOptions> 
 			</GetListItems>';
 		
-		//Create SOAP instance
-	    $soap = $this->createSoapObject();
 		//Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		$rawXML ='';
 		//Attempt to query Sharepoint
 		try{
-			$result = $this->xmlHandler($soap->GetListItems($xmlvar)->GetListItemsResult->any);
+			$result = $this->xmlHandler($this->soapObject->GetListItems($xmlvar)->GetListItemsResult->any);
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 			$result = null;
@@ -116,10 +157,7 @@ class sharepointAPI{
 	 * @return Array
 	 */
 	public function write($list, $data){
-	
-		//Create SOAP Object
-		$soap = $this->createSoapObject();
-		
+			
 		//Create XML to set values in the new Row Item
 		$items = '';
 		foreach($data AS $itm => $val){
@@ -141,7 +179,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
+			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 			$result = null;
@@ -165,7 +203,6 @@ class sharepointAPI{
 	 */
 	public function update($list, $ID, $data){
 	
-		$soap = $this->createSoapObject();
 		//Build array of colums to update in the selected Row
 		$items = '';
 		foreach($data AS $itm => $val){
@@ -189,7 +226,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 			$result = null;
@@ -206,9 +243,7 @@ class sharepointAPI{
 	 * @return Array
 	 */
 	public function delete($list, $ID){
-	
-		$soap = $this->createSoapObject();
-				
+
 		//CAML query (request), add extra Fields as necessary
 		$CAML ="
 		 <UpdateListItems xmlns='http://schemas.microsoft.com/sharepoint/soap/'>
@@ -225,7 +260,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		//Attempt to run operation
 		try{
-			$result = $this->xmlHandler($soap->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 		}
@@ -317,15 +352,18 @@ class sharepointAPI{
 	 * Creates and returns a new SOAPClient Object
 	 *
 	 * @return Object SoapClient
+	 * @depricated (this should no longer be used)
 	 */
 	private function createSoapObject(){
-		try{
-			return new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
-		}catch(SoapFault $fault){
-			//If we are unable to create a Soap Client display a Fatal error.
-			die("Fatal Error: Unable to locate WSDL file.");
-		}
+			try{
+				return new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
+			}catch(SoapFault $fault){
+				//If we are unable to create a Soap Client display a Fatal error.
+				die("Fatal Error: Unable to locate WSDL file.");
+			}
 	}
+	
+	
 	/**
 	 * onError
 	 * This is called when sharepoint throws an error and displays basic debug info.
