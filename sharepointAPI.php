@@ -30,6 +30,10 @@
  * Delete:
  * $sp->delete('<list_name>','<row_id>');
  *
+ * CRUD can be used for multiple actions on a single list.
+ * $list = $api->CRUD('<list_name>');
+ * $list->read(10);
+ * $list->create(array( 'id'=>1, 'name'=>'Fred' ));
  */
 
 class sharepointAPI{
@@ -57,7 +61,7 @@ class sharepointAPI{
 	}
 
 	/**
-	 * Smart Read
+	 * Read
 	 * Use's raw CAML to query data
 	 *
 	 * @param String $list
@@ -245,6 +249,17 @@ class sharepointAPI{
 	}
 	
 	/**
+	 * CRUD
+	 * Create a simple Create, Read, Update, Delete Wrapper around a specific list.
+	 *
+	 * @param $list Name of list to provide CRUD for.
+	 * @return ListCRUD Object
+	 */
+	public function CRUD($list){
+		return new ListCRUD($list, $this);
+	}
+	
+	/**
 	 * xmlHandler
 	 * Transform the XML returned from SOAP in to a useful datastructure.
 	 * By Defualt all sharepoint items will be represented as arrays.
@@ -323,4 +338,77 @@ class sharepointAPI{
 		//Add additional error info if available
 		if(isset($fault->detail->errorstring)) echo 'Details: '.$fault->detail->errorstring;
 	}
+}
+
+/**
+ * ListCRUD
+ * A simple Create, Read, Update, Delete Wrapper for a specific list.
+ * Useful for when you want to perform multiple actions on a specific list since it provides
+ * shorter methods.
+ */
+class ListCRUD {
+
+	//Require info
+	private $list = '';
+	private $api = null;
+	
+	/**
+	 * Construct
+	 * Setup the new CRUD object
+	 *
+	 * @param $list_name Name of List to use
+	 * @param $api Reference to SharePoint API object.
+	 */
+	public function __construct($list_name, $api)
+	{
+		$this->api = $api;
+		$this->list = $list_name;
+	}
+	
+	/**
+	 * Create
+	 * Create new item in the List
+	 *
+	 * @param Array $data Assosative array describing data to store
+	 * @return Array
+	 */
+	public function create($data){
+		return $this->api->write($this->list, $data);
+	}
+	
+	/**
+	 * Read
+	 * Read items from List
+	 *
+	 * @param int $limit
+	 * @param Array $query
+	 * @return Array
+	 */
+	public function read($limit=0, $query=null){
+		return $this->api->read($this->list, $limit, $query);
+	}
+	
+	/**
+	 * Update
+	 * Update/Modifiy an existing list item.
+	 *
+	 * @param int $ID ID of item to update
+	 * @param Array $data Assosative array of data to change.
+	 * @return Array
+	 */
+	public function update($item_id, $data){
+		return $this->api->update($this->list, $item_id, $data);
+	}
+	
+	/**
+	 * Delete
+	 * Delete an existing list item.
+	 *
+	 * @param int $item_id ID of item to delete
+	 * @return Array
+	 */
+	public function delete($item_id){
+		return $this->api->delete($this->list, $item_id);
+	}
+
 }
