@@ -3,7 +3,7 @@
 The PHP SharePoint Lists API is designed to make working with SharePoint List in PHP easier and more straight forward (no need to worry about SOAP).
 The current version of the class only includes methods to add, edit, remove and read from existing SharePoint lists. 
 
-All methods will return as results.
+All methods will return Array as results by default. SetReturn type can be used to specify that results should be returned as objects.
 
 This code is licensed under the MIT Licence and has only been tested on SharePoint 2007.
 
@@ -36,11 +36,19 @@ To return the first 5 items where the surname is smith and the age is 40
 
     $sp->read('<list_name>', 5, array('surname'=>'smith','age'=>40)); 
 	
+To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
+
+    $sp->read('<list_name>', 10, array('surname'=>'smith','age'=>40),'{0FAKE-GUID001-1001001-10001}'); 
+	
+To return the first 10 items where the surname is smith, ordered by age use:
+
+    $sp->read('<list_name>', 10, array('surname'=>'smith'), null, array('age' => 'desc')); 
+	
 By default List item's are returned in the form of an Array. If you would prefer the results to return in object form, use 
 
 	$sp->setReturnType('object'); 
 	
-Before invoking the any read operations.
+Before invoking any read operations.
 
 
 #### Adding to a list
@@ -76,4 +84,17 @@ want to perform multiple actions on the same list. Crud methods do not require a
 You can get a full listing of all avaiable lists within the connected sharepoint subsite by calling:
 
 	$sp->getLists();
+	
+#### List metaData.
+You can access a lists meta data (Column configurtion for example) by calling
+
+	$sp->readListMeta('My List');
+	
+By default the method will attempt to strip out non-useful columns from the results. If you'd like the full results to be returned call:
+
+	$sp->readListMeta('My List',false);
+
+	
+	
+	
 	

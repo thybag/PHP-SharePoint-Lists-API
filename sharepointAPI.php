@@ -20,6 +20,8 @@
  * $sp->read('<list_name>');
  * $sp->read('<list_name>', 500); //Return 500 records
  * $sp->read('<list_name>', null, array('<col_name>'=>'<col_value>'); // Filter on col_name = col_value
+ * $sp->read('<list_name>', null, null, '{FAKE-GUID00-0000-000}'); 	//Return list items with view (specified via GUID)
+ * $sp->read('<list_name>', null, null, null, array('col_name'=>'asc|desc'));
  *
  * Write: (insert)
  * $sp->write('<list_name>', array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
@@ -63,18 +65,17 @@ class sharepointAPI{
 		
 		//Create new SOAP Client
 		try{
-			$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
+			$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser, 'password' => $this->spPass));
 		}catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
 			die("Fatal Error: Unable to locate WSDL file.");
 		}
-		
 	}
 	
 	/**
-	 * getLists
-	 * Return an array containing all avaiable lists within this sharepoint subsite.
-	 * use set return type if you wish for this data to be provided as an object.
+	 * Get Lists
+	 * Return an array containing all avaiable lists within a given sharepoint subsite.
+	 * Use "set return type" if you wish for this data to be provided as an object.
 	 *
 	 * @return array (array) | array (object)
 	 */
@@ -102,40 +103,95 @@ class sharepointAPI{
 		
 		return $results;
 	}
-
+	
+	/**
+	* Read List MetaData (Column configurtion)
+	* Return a full listing of columns and their configurtion options for a given sharepointList.
+	*
+	* @param $list Name or GUID of list to return metaData from.
+	* @param $hideInternal true|false Attempt to hide none useful columns (internal data etc)
+	*
+	* @return Array
+	*/
+	public function readListMeta($list, $hideInternal = true){
+		//Ready XML
+		$CAML = '
+			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
+			  <listName>'.$list.'</listName> 
+			</GetList>
+		';
+		$rawxml ='';
+		//Attempt to query Sharepoint
+		try{
+			$rawxml = $this->soapObject->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
+		}catch(SoapFault $fault){
+			$this->onError($fault);
+		}
+		//Load XML in to DOM document and grab all Fields
+		$dom = new DOMDocument();
+		$dom->loadXML($rawxml);
+		$nodes = $dom->getElementsByTagName("Field");
+		
+		//Format data in to array or object
+		foreach($nodes as $counter => $node){
+			//Attempt to hide none useful feilds (disable by setting second param to false)
+			if($hideInternal) if($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {continue;}
+			//Get Attributes
+			foreach($node->attributes as $attribute => $value){
+				$results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
+			}
+			//Get contents (Raw xml)
+			foreach($node->childNodes as $childNode){
+				$inner_xml .= $node->ownerDocument->saveXml($childNode);
+			}
+			$results[$counter]['value'] = $inner_xml;
+			
+			//Make object if needed
+			if($this->returnType === 1) settype($results[$counter], "object");
+		}
+		//Add error array if stuff goes wrong.
+		if(!isset($results)) $results = array('warning' => 'No data returned.');
+		
+		//Return a XML as nice clean Array or Object
+		return $results;
+	}
+	
 	/**
 	 * Read
-	 * Use's raw CAML to query data
+	 * Use's raw CAML to query sharepoint data
 	 *
 	 * @param String $list
 	 * @param int $limit
 	 * @param Array $query
+	 * @param String (GUID) $view "View to display results with."
+	 * @param Array $sort
+	 *
 	 * @return Array
 	 */
-	public function read($list, $limit = null, $query = null){
+	public function read($list, $limit = null, $query = null, $view = null, $sort = null){
 		//Check limit is set
-		if($limit==0 || $limit == null) $limit = $this->MAX_ROWS;
+		if($limit<1 || $limit == null) $limit = $this->MAX_ROWS;
 		//Create Query XML is query is being used
-		$queryXML = '';
-		//If query is set pass it to the query builder
-		if($query != null){
-			$queryXML = $this->queryXML($query);
-		}
+		$xml_options= ''; $xml_query='';
+		//Setup Options
+		if($view != null) 	$xml_options .= "<viewName>{$view}</viewName>";
+		if($query != null)	$xml_query .= $this->whereXML($query);//Build Query
+		if($sort != null)	$xml_query .= $this->sortXML($sort);
+		//If query is required
+		if($xml_query!='') $xml_options .= "<query><Query>{$xml_query}</Query></query>";
 		//Setup basic XML for quering a sharepoint list.
 		//If rowLimit is not provided sharepoint will defualt to a limit of 100 items.
 		$CAML = '
 			<GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
 			  <listName>'.$list.'</listName> 
 			  <rowLimit>'.$limit.'</rowLimit>
-			  '.$queryXML.'
+			   '.$xml_options.'
 			  <queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" > 
 				  <QueryOptions/> 
 			  </queryOptions> 
 			</GetListItems>';
-		
 		//Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$rawXML ='';
 		//Attempt to query Sharepoint
 		try{
 			$result = $this->xmlHandler($this->soapObject->GetListItems($xmlvar)->GetListItemsResult->any);
@@ -330,13 +386,13 @@ class sharepointAPI{
 	}
 	
 	/**
-	 * QueryXML
-	 * Generates XML for a query
+	 * Query XML
+	 * Generates XML for WHERE Query
 	 *
 	 * @param Array $q array('<col>' => '<value_to_match_on>')
 	 * @return XML DATA
 	 */
-	private function queryXML($q){
+	private function whereXML($q){
 		
 		$queryString ='';
 		foreach($q as $col => $value){
@@ -345,8 +401,28 @@ class sharepointAPI{
 		//Add "and" when needed to query more than 1 attribute
 		if(sizeof($q) > 1) $queryString = "<And>{$queryString}</And>";
 
-		return "<query><Query><Where>{$queryString}</Where></Query></query>";
+		return "<Where>{$queryString}</Where>";
 	}
+	
+	/**
+	 * Sort XML
+	 * Generates XML for sort
+	 *
+	 * @param Array $sort array('<col>' => 'asc | desc')
+	 * @return XML DATA
+	 */
+	private function sortXML($sort){
+		if($sort == null || !is_array($sort)){ return ''; }
+		
+		$queryString ='';
+		foreach($sort as $col => $value){
+			$s = 'false';
+			if($value == 'ASC' || $value == 'asc' || $value == 'true' || $value == 'ascending') $s = 'true';
+			$queryString .= '<FieldRef Name="'.$col.'" Ascending="'.$s.'" />';
+		}
+		return "<OrderBy>{$queryString}</OrderBy>";
+	}
+	
 	/**
 	 * Create Soap Object
 	 * Creates and returns a new SOAPClient Object
@@ -362,7 +438,6 @@ class sharepointAPI{
 				die("Fatal Error: Unable to locate WSDL file.");
 			}
 	}
-	
 	
 	/**
 	 * onError
@@ -423,7 +498,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function read($limit=0, $query=null){
-		return $this->api->read($this->list, $limit, $query);
+		return $this->api->read($this->list, $limit, $query, $view, $sort);
 	}
 	
 	/**
