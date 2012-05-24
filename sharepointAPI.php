@@ -106,7 +106,7 @@ class sharepointAPI{
 	
 	/**
 	* Read List MetaData (Column configurtion)
-	* Return a full listing of columns and their configurtion options for a given sharepointList.
+	* Return a full listing of columns and their configurtion options for a given sharepoint list.
 	*
 	* @param $list Name or GUID of list to return metaData from.
 	* @param $hideInternal true|false Attempt to hide none useful columns (internal data etc)
@@ -134,8 +134,12 @@ class sharepointAPI{
 		
 		//Format data in to array or object
 		foreach($nodes as $counter => $node){
+			//Empty inner_xml
+			$inner_xml ='';
+		
 			//Attempt to hide none useful feilds (disable by setting second param to false)
 			if($hideInternal) if($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {continue;}
+			
 			//Get Attributes
 			foreach($node->attributes as $attribute => $value){
 				$results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
