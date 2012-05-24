@@ -399,12 +399,14 @@ class sharepointAPI{
 	private function whereXML($q){
 		
 		$queryString ='';
+		$counter = 0;
 		foreach($q as $col => $value){
+			$counter++;
 			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value></Eq>';
+			//Add additional "and"s if there are multiple query levels needed.
+			if($counter>=2) $queryString = "<And>{$queryString}</And>";
 		}
-		//Add "and" when needed to query more than 1 attribute
-		if(sizeof($q) > 1) $queryString = "<And>{$queryString}</And>";
-
+		
 		return "<Where>{$queryString}</Where>";
 	}
 	
