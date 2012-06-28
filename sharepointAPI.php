@@ -178,9 +178,14 @@ class sharepointAPI{
 		//Create Query XML is query is being used
 		$xml_options= ''; $xml_query='';
 		//Setup Options
-		if($view != null) 	$xml_options .= "<viewName>{$view}</viewName>";
-		if($query != null)	$xml_query .= $this->whereXML($query);//Build Query
-		if($sort != null)	$xml_query .= $this->sortXML($sort);
+		//die(get_class($query));
+		if(gettype($query)=='object' && get_class($query)=='SPQueryObj'){
+			$xml_query = $query->getCAML();
+		}else{
+			if($view != null) 	$xml_options .= "<viewName>{$view}</viewName>";
+			if($query != null)	$xml_query .= $this->whereXML($query);//Build Query
+			if($sort != null)	$xml_query .= $this->sortXML($sort);
+		}
 		//If query is required
 		if($xml_query!='') $xml_options .= "<query><Query>{$xml_query}</Query></query>";
 		//Setup basic XML for quering a sharepoint list.
@@ -341,6 +346,19 @@ class sharepointAPI{
 		}else{
 			$this->returnType = 0;
 		}
+	}
+
+	/**
+	 * Query
+	 * Create a query against a list in sharepoint
+	 *
+	 * Build querys as $sp->query('my_list')->where('score','>',15)->and_where('year','=','9')->get();
+	 * 
+	 * @param List name / GUID number
+	 * @return SP List Item
+	 */
+	public function query($table){
+		return new SPQueryObj($table, $this);
 	}
 	
 	/**
@@ -530,4 +548,75 @@ class ListCRUD {
 		return $this->api->delete($this->list, $item_id);
 	}
 
+}
+
+/**
+ * SP Query Object
+ * Used to store and then run complex queries against a sharepoint this.
+ *
+ * @todo Add Order by and group by options. Figure out way of nesting ands/ors rather than applying them directly
+ *
+ * WARNING: This feature is still in test and is not yet feature complete.
+ */
+Class SPQueryObj {
+
+	//Internla data;
+	private $table;
+	private $api;
+	private $where_caml = '';
+	private $limit = null;
+	//setup
+	public function __construct($table, $api){
+		$this->table = $table;
+		$this->api = $api;
+	}
+	//Perform a where action
+	public function where($col,$test,$val){
+		return $this->addQueryLine('where',$col,$test,$val);
+	}
+	//Perform AND
+	public function and_where($col,$test,$val){
+		return $this->addQueryLine('and',$col,$test,$val);
+	}
+	//Peform OR
+	public function or_where($col,$test,$val){
+		return $this->addQueryLine('or',$col,$test,$val);
+	}
+	//Set LIMIT for return
+	public function limit($limit){
+		$this->limit = $limit;
+		return $this;
+	}
+
+	//Build query line
+	private function addQueryLine($rel, $col, $test, $value){
+		//Check tests are usable
+		if(!in_array($test,array('<','>','=','!='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
+		$test = str_replace(array('<','>','=','!='), array('Lt','Gt','Eq','Neq'), $test);
+		//Create caml
+		$caml = $this->where_caml;
+		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value>'."\n";
+		$caml .= "<{$test}>{$content}</{$test}>";
+		//Attach relations
+		if($rel=='and'){
+			$this->where_caml = "<And>{$caml}</And>";
+		}else if($rel == 'or'){
+			$this->where_caml = "<Or>{$caml}</Or>";
+		}else if($rel = 'where'){
+			$this->where_caml = $caml;
+		}
+		//return self
+		return $this;
+	}
+	//Run query
+	public function get(){
+		return $this->api->read($this->table, $this->limit, $this);
+	}
+
+	//internal method to pass data back to run
+	public function getCAML(){
+		$xml = $this->where_caml;
+		if($xml != '') $xml = "<Where>{$this->where_caml}</Where>";
+		return $xml;
+	}
 }
