@@ -693,8 +693,8 @@ Class SPQueryObj {
 	 */
 	private function addQueryLine($rel, $col, $test, $value){
 		//Check tests are usable
-		if(!in_array($test,array('!=','<','>','='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
-		$test = str_replace(array('!=','<','>','='), array('Neq','Lt','Gt','Eq'), $test);
+		if(!in_array($test,array('!=','>=', '<=', '<','>','='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
+		$test = str_replace(array('!=','>=', '<=', '<','>','='), array('Neq','Geq', 'Leq','Lt','Gt','Eq'), $test);
 		//Create caml
 		$caml = $this->where_caml;
 		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value>'."\n";
