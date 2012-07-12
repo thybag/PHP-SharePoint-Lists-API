@@ -550,6 +550,16 @@ class ListCRUD {
 	public function delete($item_id){
 		return $this->api->delete($this->list, $item_id);
 	}
+
+	/**
+	 * Query
+	 * Create a query against a list in sharepoint
+	 *
+	 * @return SP List Item
+	 */
+	public function query(){
+		return new SPQueryObj($this->list, $this->api);
+	}
 }
 
 /**

@@ -1,11 +1,12 @@
 # PHP SharePoint Lists API#
 
-The PHP SharePoint Lists API is designed to make working with SharePoint List in PHP easier and more straight forward (no need to worry about SOAP).
-The current version of the class only includes methods to add, edit, remove and read from existing SharePoint lists. 
+The PHP SharePoint Lists API is designed to make working with SharePoint Lists in PHP easier and more straight forward (no need to worry about SOAP).
 
-All methods will return Array as results by default. SetReturn type can be used to specify that results should be returned as objects.
+The current version includes the ability to read, query, edit, delete and add to existing SharePoint lists, plus the ability to query the ListOfLists and to return a lists metadata.
 
-This code is licensed under the MIT Licence and has only been tested on SharePoint 2007.
+All methods will return Array as results by default. SetReturnType can be used to specify that results should be returned as objects.
+
+This code is licensed under the MIT Licence and has been tested on SharePoint 2007.
 
 ### Usage Instructions
 
@@ -50,6 +51,16 @@ By default List item's are returned in the form of an Array. If you would prefer
 	
 Before invoking any read operations.
 
+#### Querying a list
+The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) Pseudo SQL methods.
+
+If you for example wanted to query a list of pets and return all dogs below the age of 5 (sorted by age) you could use.
+
+    $sp->query('list of pets')->where('type','=','dog')->and_where('age','<','5')->sort('age','ASC')->get();
+
+If you wanted to get the first 10 pets that were either cats or hamsters you could use:
+
+    $sp->query('list of pets')->where('type','=','cat')->or_where('type','=','hamster')->limit(10)->get();
 
 #### Adding to a list
 
