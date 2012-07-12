@@ -5,7 +5,7 @@
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
- * @version 2012.02.13
+ * @version 2012.07.12
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -22,6 +22,9 @@
  * $sp->read('<list_name>', null, array('<col_name>'=>'<col_value>'); // Filter on col_name = col_value
  * $sp->read('<list_name>', null, null, '{FAKE-GUID00-0000-000}'); 	//Return list items with view (specified via GUID)
  * $sp->read('<list_name>', null, null, null, array('col_name'=>'asc|desc'));
+ *
+ * Query:
+ * $sp->query('<list_name>')->where('type','=','dog')->and_where('age','>','5')->limit(10)->sort('age','ASC')->get();
  *
  * Write: (insert)
  * $sp->write('<list_name>', array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
@@ -547,52 +550,141 @@ class ListCRUD {
 	public function delete($item_id){
 		return $this->api->delete($this->list, $item_id);
 	}
-
 }
 
 /**
  * SP Query Object
- * Used to store and then run complex queries against a sharepoint this.
+ * Used to store and then run complex queries against a sharepoint list.
  *
- * @todo Add Order by and group by options. Figure out way of nesting ands/ors rather than applying them directly
- *
- * WARNING: This feature is still in test and is not yet feature complete.
+ * Note: Querys are executed strictly from left to right and do not currently support nesting.
  */
 Class SPQueryObj {
 
-	//Internla data;
-	private $table;
-	private $api;
-	private $where_caml = '';
+	//Internal data
+	private $table;	//Table to query
+	private $api; 	//Ref to API obj
+	private $where_caml = '';//CAML for where query
+	private $sort_caml ='';//CAML for sort
 	private $limit = null;
-	//setup
-	public function __construct($table, $api){
-		$this->table = $table;
+	private $view = null;
+	
+	/**
+	 * Construct
+	 * Setup new query Object
+	 *
+	 * @param $list List to Query
+	 * @param $api Reference to SP API
+	 */
+	public function __construct($list, $api){
+		$this->table = $list;
 		$this->api = $api;
 	}
-	//Perform a where action
+	/**
+	 * Where
+	 * Perform inital where action
+	 *
+	 * @param $col column to test
+	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $value to test with
+	 * @return Ref to self
+	 */
 	public function where($col,$test,$val){
 		return $this->addQueryLine('where',$col,$test,$val);
 	}
-	//Perform AND
+
+	/**
+	 * And_Where
+	 * Perform additional and where actions
+	 *
+	 * @param $col column to test
+	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $value to test with
+	 * @return Ref to self
+	 */
 	public function and_where($col,$test,$val){
 		return $this->addQueryLine('and',$col,$test,$val);
 	}
-	//Peform OR
+
+	/**
+	 * Or_Where
+	 * Perform additional or where actions
+	 *
+	 * @param $col column to test
+	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $value to test with
+	 * @return Ref to self
+	 */
 	public function or_where($col,$test,$val){
 		return $this->addQueryLine('or',$col,$test,$val);
 	}
-	//Set LIMIT for return
+
+	/**
+	 * Limit
+	 * Specify maxium amount of items to return. (if not set, default is used.)
+	 *
+	 * @param $limit number of items to return
+	 * @return Ref to self
+	 */
 	public function limit($limit){
 		$this->limit = $limit;
 		return $this;
 	}
 
-	//Build query line
+	/**
+	 * Using
+	 * Specify view to use when returning data.
+	 *
+	 * @param $view Name/GUID
+	 * @return Ref to self
+	 */
+	public function using($view){
+		$this->view = $view;
+		return $this;
+	}
+
+	/**
+	 * Sort
+	 * Specify order data should be returned in.
+	 *
+	 * @param $sort_on column to sort on
+	 * @param $order Sort direction
+	 * @return Ref to self
+	 */
+	public function sort($sort_on, $order = 'DESC'){
+		$s = 'false';
+		if($order == 'ASC' || $order == 'asc' || $order == 'true' || $order == 'ascending') $s = 'true';
+		
+		$queryString = '<FieldRef Name="'.$sort_on.'" Ascending="'.$s.'" />';
+		$this->sort_caml = "<OrderBy>{$queryString}</OrderBy>";
+		
+		return $this;
+	}
+
+	/**
+	 * get
+	 * Runs the specified query and returns a useable result.
+	 * @return Array: Sharepoint List Data 
+	 *
+	 */
+	public function get(){
+		return $this->api->read($this->table, $this->limit, $this, $this->view);
+	}
+
+
+	/**
+	 * addQueryLine
+	 * Generate CAML for where statements
+	 *
+	 * @param $rel Relation AND/OR etc
+	 * @param $col column to test
+	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $value to test with
+	 * @return Ref to self
+	 */
 	private function addQueryLine($rel, $col, $test, $value){
 		//Check tests are usable
-		if(!in_array($test,array('<','>','=','!='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
-		$test = str_replace(array('<','>','=','!='), array('Lt','Gt','Eq','Neq'), $test);
+		if(!in_array($test,array('!=','<','>','='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
+		$test = str_replace(array('!=','<','>','='), array('Neq','Lt','Gt','Eq'), $test);
 		//Create caml
 		$caml = $this->where_caml;
 		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value>'."\n";
@@ -608,15 +700,20 @@ Class SPQueryObj {
 		//return self
 		return $this;
 	}
-	//Run query
-	public function get(){
-		return $this->api->read($this->table, $this->limit, $this);
-	}
-
-	//internal method to pass data back to run
+	
+	/**
+	 * getCAML
+	 * Combine and return the raw CAML data for the query operation that has been specified.
+	 * @return CAML Code (XML)
+	 */
 	public function getCAML(){
 		$xml = $this->where_caml;
+		$sort =	$this->sort_caml;
+		//Add where
 		if($xml != '') $xml = "<Where>{$this->where_caml}</Where>";
+		//add sort
+		if($sort != '') $xml .= $sort;
+		
 		return $xml;
 	}
 }
