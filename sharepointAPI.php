@@ -5,7 +5,7 @@
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
- * @version 2012.07.12
+ * @version 2012.08.10
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -47,6 +47,7 @@ class sharepointAPI{
 	private $spPass;
 	private $wsdl;
 	private $returnType = 0;
+	private $lower_case_indexs = true;
 
 	//Maximum rows to return from a List 
 	private $MAX_ROWS = 10000;
@@ -96,7 +97,8 @@ class sharepointAPI{
 		//Format data in to array or object
 		foreach($nodes as $counter => $node){
 			foreach($node->attributes as $attribute => $value){
-				$results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
+				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
+				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
 			//Make object if needed
 			if($this->returnType === 1) settype($results[$counter], "object");
@@ -145,7 +147,8 @@ class sharepointAPI{
 			
 			//Get Attributes
 			foreach($node->attributes as $attribute => $value){
-				$results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
+				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
+				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
 			//Get contents (Raw xml)
 			foreach($node->childNodes as $childNode){
@@ -352,6 +355,18 @@ class sharepointAPI{
 	}
 
 	/**
+	 * lowercaseIndexs
+	 * Enable or disable automically lowercasing indexs for returned data.
+	 * (By defualt this is enabled to avoid users having to worry about the case attributers are in)
+	 * Array or Object.
+	 *
+	 * @param $enable true|false
+	 */
+	public function lowercaseIndexs($enable){
+		$this->lower_case_indexs = ($enable === true);
+	}
+
+	/**
 	 * Query
 	 * Create a query against a list in sharepoint
 	 *
@@ -393,9 +408,10 @@ class sharepointAPI{
 		//Proccess Object and return a nice clean assoaitive array of the results
 		foreach($results as $i => $result){
 			$resultArray[$i] = array();
-			foreach($result->attributes as $test => $value){
+			foreach($result->attributes as $attribute=> $value){
+				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				// Re-assign all the attributes into an easy to access array
-				$resultArray[$i][strtolower(str_replace('ows_','',$test))] = $result->getAttribute($test);
+				$resultArray[$i][str_replace('ows_','',$idx)] = $result->getAttribute($attribute);
 			}
 			//ReturnType 1 = Object. 
 			//If set, change array in to an object.
@@ -423,7 +439,7 @@ class sharepointAPI{
 		$counter = 0;
 		foreach($q as $col => $value){
 			$counter++;
-			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value></Eq>';
+			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.htmlspecialchars($value).'</Value></Eq>';
 			//Add additional "and"s if there are multiple query levels needed.
 			if($counter>=2) $queryString = "<And>{$queryString}</And>";
 		}
@@ -697,7 +713,7 @@ Class SPQueryObj {
 		$test = str_replace(array('!=','>=', '<=', '<','>','='), array('Neq','Geq', 'Leq','Lt','Gt','Eq'), $test);
 		//Create caml
 		$caml = $this->where_caml;
-		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'.$value.'</Value>'."\n";
+		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'. htmlspecialchars($value).'</Value>'."\n";
 		$caml .= "<{$test}>{$content}</{$test}>";
 		//Attach relations
 		if($rel=='and'){
