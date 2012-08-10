@@ -45,12 +45,14 @@ To return the first 10 items where the surname is smith, ordered by age use:
 
     $sp->read('<list_name>', 10, array('surname'=>'smith'), null, array('age' => 'desc')); 
 	
-By default List item's are returned in the form of an Array. If you would prefer the results to return in object form, use 
+By default list item's are returned as arrays with lower case index's. If you would prefer the results to return as object's, before invoking any read operations use:
 
 	$sp->setReturnType('object'); 
 	
-Before invoking any read operations.
+Automatically making the attribute names lowercase can also be deactivated by using:
 
+	$sp->lowercaseIndexs(false);
+	
 #### Querying a list
 The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) Pseudo SQL methods.
 
