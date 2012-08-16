@@ -232,6 +232,7 @@ class sharepointAPI{
 		//Create XML to set values in the new Row Item
 		$items = '';
 		foreach($data AS $itm => $val){
+			$val = htmlspecialchars($val);
 			$items .= "<Field Name='{$itm}'>{$val}</Field>\n";
 		}
 		//CAML query (request), add extra Fields as necessary
@@ -277,6 +278,7 @@ class sharepointAPI{
 		//Build array of colums to update in the selected Row
 		$items = '';
 		foreach($data AS $itm => $val){
+			$val = htmlspecialchars($val);
 			$items .= "<Field Name='{$itm}'>{$val}</Field>\n";
 		}
 		
