@@ -5,7 +5,7 @@
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
- * @version 2012.08.10
+ * @version 2012.09.02
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -28,9 +28,21 @@
  *
  * Write: (insert)
  * $sp->write('<list_name>', array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
- * 
+ *
+ * WriteMultiple:
+ * $sp->writeMultiple('<list_name>', array(
+ * 					array('Title' => 'New item'),
+ *					array('Title' => 'New item 2')
+ * 				));
+ *
  * Update:
  * $sp->update('<list_name>','<row_id>', array('<col_name>'=>'<new_data>'));
+ *
+ * UpdateMultiple:
+ * $sp->updateMultiple('<list_name>', array(
+ * 					array('ID'=>1, 'Title' => 'new name'),
+ *					array('ID'=>2, 'Title' => 'New name 2')
+ * 				));
  *
  * Delete:
  * $sp->delete('<list_name>','<row_id>');
@@ -228,41 +240,26 @@ class sharepointAPI{
 	 * @return Array
 	 */
 	public function write($list, $data){
-			
-		//Create XML to set values in the new Row Item
-		$items = '';
-		foreach($data AS $itm => $val){
-			$val = htmlspecialchars($val);
-			$items .= "<Field Name='{$itm}'>{$val}</Field>\n";
-		}
-		//CAML query (request), add extra Fields as necessary
-		$CAML ="
-		 <UpdateListItems xmlns='http://schemas.microsoft.com/sharepoint/soap/'>
-			 <listName>{$list}</listName>
-			 <updates>
-				 <Batch ListVersion='1' OnError='Continue'>
-					 <Method Cmd='New' ID='1'>
-						{$items}
-					 </Method>
-				 </Batch>
-			 </updates>
-		 </UpdateListItems>";
-		 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		//Attempt to run operation
-		try{
-			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
-		}catch(SoapFault $fault){
-			$this->onError($fault);
-			$result = null;
-		}
-		//Return a XML as nice clean Array
-		return $result;
+		return $this->writeMultiple($list, array($data));
 	}
-	//Alias
-	public function insert($list, $data){
-		return $this->write($list, $data); 
+	//Alias (Identical to above)
+	public function add($list, $data){return $this->write($list, $data);}
+	public function insert($list, $data){return $this->write($list, $data);}
+
+	/**
+	 * WriteMultiple
+	 * Batch create new items in a sharepoint list
+	 *
+	 * @param String $list Name of List
+	 * @param Array of arrays Assosative array's describing data to store
+	 * @return Array
+	 */
+	public function writeMultiple($list, $items){
+		return $this->modifyList($list, $items, 'New');
 	}
+	//Alias (Identical to above)
+	public function addMultiple($list, $items){return $this->writeMultiple($list, $items);}
+	public function insertMultiple($list, $items){return $this->writeMultiple($list, $items);}
 	
 	/**
 	 * Update
@@ -274,39 +271,23 @@ class sharepointAPI{
 	 * @return Array
 	 */
 	public function update($list, $ID, $data){
-	
-		//Build array of colums to update in the selected Row
-		$items = '';
-		foreach($data AS $itm => $val){
-			$val = htmlspecialchars($val);
-			$items .= "<Field Name='{$itm}'>{$val}</Field>\n";
-		}
-		
-		//CAML query (request), add extra Fields as necessary
-		$CAML ="
-		 <UpdateListItems xmlns='http://schemas.microsoft.com/sharepoint/soap/'>
-			 <listName>{$list}</listName>
-			 <updates>
-				 <Batch ListVersion='1' OnError='Continue'>
-					 <Method Cmd='Update' ID='1'>
-						<Field Name='ID'>{$ID}</Field>
-						{$items}
-					 </Method>
-				 </Batch>
-			 </updates>
-		 </UpdateListItems>";
-		 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		//Attempt to run operation
-		try{
-			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
-		}catch(SoapFault $fault){
-			$this->onError($fault);
-			$result = null;
-		}
-		//Return a XML as nice clean Array
-		return $result;
+		//Add ID to item
+		$data['ID'] = $ID;
+		return $this->updateMultiple($list, array($data));
 	}
+
+	/**
+	 * UpdateMultiple
+	 * Batch Update/Modifiy existing list item's.
+	 *
+	 * @param String $list Name of list
+	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
+	 * @return Array
+	 */
+	public function updateMultiple($list, $items){
+		return $this->modifyList($list, $items, 'Update');
+	}
+	
 	/**
 	 * Delete
 	 * Delete an existing list item.
@@ -467,6 +448,74 @@ class sharepointAPI{
 		}
 		return "<OrderBy>{$queryString}</OrderBy>";
 	}
+
+	/**
+	 * modifyList
+	 * Perform an action on a sharePoint list to either update or add content to it.
+	 * This method will use prepBatch to generate the batch xml, then call the sharepoint SOAP API with this data
+	 * to apply the changes.
+	 *
+	 * @param $list SharePoint List to update
+	 * @param $items Arrary of new items or item changesets.
+	 * @param $method New/Update
+	 * @return Array|Object
+	 */
+	public function modifyList($list, $items, $method){
+
+		//Get batch XML
+		$commands = $this->prepBatch($items, $method);
+		//Wrap in CAML
+		$CAML ="
+		 <UpdateListItems xmlns='http://schemas.microsoft.com/sharepoint/soap/'>
+			 <listName>{$list}</listName>
+			 <updates>
+				 <Batch ListVersion='1' OnError='Continue'>
+					 {$commands}
+				 </Batch>
+			 </updates>
+		 </UpdateListItems>";
+		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+		//Attempt to run operation
+		try{
+			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+		}catch(SoapFault $fault){
+			$this->onError($fault);
+			$result = null;
+		}
+		//Return a XML as nice clean Array
+		return $result;
+	}
+
+	/**
+	 * prepBatch
+	 * Convert an array of new items or changesets in to XML commands to be run on
+	 * the sharepoint SOAP API.
+	 *
+	 * @param $items array of new items/changesets
+	 * @param $method New/Update
+	 * @return XML
+	 */
+	public function prepBatch($items, $method){
+		//Get var's needed
+		$batch = '';
+		$counter = 1;
+		$method = ($method == 'Update') ? 'Update' : 'New';
+		//Foreach item to be converted in to a SharePoint Soap Command
+		foreach($items as $data){
+			//Wrap item in command for given method
+			$batch .= "<Method Cmd='{$method}' ID='{$counter}'>";
+			//Add required attributes
+			foreach($data AS $itm => $val){
+				$val = htmlspecialchars($val);
+				$batch .= "<Field Name='{$itm}'>{$val}</Field>\n";
+			}
+			$batch .= "</Method>";
+			//Inc counter
+			$counter++;
+		}
+		//Return XML data.
+		return $batch;
+	}
 	
 	/**
 	 * Create Soap Object
@@ -533,6 +582,17 @@ class ListCRUD {
 	public function create($data){
 		return $this->api->write($this->list, $data);
 	}
+
+	/**
+	 * createMultiple
+	 * Batch add items to the List
+	 *
+	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
+	 * @return Array
+	 */
+	public function createMultiple($data){
+		return $this->api->writeMultiple($this->list, $data);
+	}
 	
 	/**
 	 * Read
@@ -556,6 +616,17 @@ class ListCRUD {
 	 */
 	public function update($item_id, $data){
 		return $this->api->update($this->list, $item_id, $data);
+	}
+
+	/**
+	 * UpdateMultiple
+	 * Batch Update/Modifiy existing list item's.
+	 *
+	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
+	 * @return Array
+	 */
+	public function updateMultiple($data){
+		return $this->api->updateMultiple($this->list, $data);
 	}
 	
 	/**

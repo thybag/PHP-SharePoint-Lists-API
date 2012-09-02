@@ -1,12 +1,12 @@
 # PHP SharePoint Lists API#
 
-The PHP SharePoint Lists API is designed to make working with SharePoint Lists in PHP easier and more straight forward (no need to worry about SOAP).
+The *PHP SharePoint Lists API* is designed to make working with SharePoint Lists easier and less error prone. With it, you no longer need to worry about SOAP and can just get with doing what you actually need to do. This library is free for anyone to use and is licensed under the MIT license.
 
 The current version includes the ability to read, query, edit, delete and add to existing SharePoint lists, plus the ability to query the ListOfLists and to return a lists metadata.
 
 All methods will return Array as results by default. SetReturnType can be used to specify that results should be returned as objects.
 
-This code is licensed under the MIT Licence and has been tested on SharePoint 2007.
+Tested on SharePoint 2007.
 
 ### Usage Instructions
 
@@ -66,10 +66,16 @@ If you wanted to get the first 10 pets that were either cats or hamsters you cou
 
 #### Adding to a list
 
-To add a new item to a list you can use either the method "write" or "insert" (both function identically). Creating a new record in a List with the headings forename, surname, age, phone may look like:
+To add a new item to a list you can use either the method "write", "add" or "insert" (all function identically). Creating a new record in a List with the columns forename, surname, age and phone may look like:
 
     $sp->write('<list_name>', array('forename'=>'Bob','surname' =>'Smith', 'age'=>40, 'phone'=>'(00000) 000000' ));
 
+You can also run multiple write operations together by using:
+
+ 	$sp->writeMultiple('<list_name>', array(
+		array('forename' => 'James'),
+		array('forename' => 'Steve')
+	));
 
 #### Editing Rows
 
@@ -77,6 +83,14 @@ To edit a row you need to have its ID. Assuming the above row had the ID 5, we c
 
     $sp->update('<list_name>','5', array('forename'=>'James'));
 
+As with the write method you can also run multiple update operations together by using:
+
+ 	$sp->updateMultiple('<list_name>', array(
+		array('ID'=>5,'job'=>'Intern'),
+		array('ID'=>6,'job'=>'Intern')
+	));
+
+When using updateMultiple every item MUST have an ID.
 
 #### Deleting Rows
 
@@ -106,8 +120,3 @@ You can access a lists meta data (Column configurtion for example) by calling
 By default the method will attempt to strip out non-useful columns from the results. If you'd like the full results to be returned call:
 
 	$sp->readListMeta('My List',false);
-
-	
-	
-	
-	
