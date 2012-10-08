@@ -84,7 +84,7 @@ class sharepointAPI{
 			$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser, 'password' => $this->spPass));
 		}catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
-			die("Fatal Error: Unable to locate WSDL file.");
+			throw new Exception("Unable to locate WSDL file.");
 		}
 	}
 	
@@ -196,7 +196,6 @@ class sharepointAPI{
 		//Create Query XML is query is being used
 		$xml_options= ''; $xml_query='';
 		//Setup Options
-		//die(get_class($query));
 		if(gettype($query)=='object' && get_class($query)=='SPQueryObj'){
 			$xml_query = $query->getCAML();
 		}else{
@@ -538,12 +537,12 @@ class sharepointAPI{
 	 * This is called when sharepoint throws an error and displays basic debug info.
 	 *
 	 * @param $fault Error Information
+	 * @throws Exception
 	 */
 	private function onError($fault){
-		echo 'Fault code: '.$fault->faultcode.'<br/>';
-		echo 'Fault string: '.$fault->faultstring.'<br/>';
-		//Add additional error info if available
-		if(isset($fault->detail->errorstring)) echo 'Details: '.$fault->detail->errorstring;
+		$more = '';
+		if(isset($fault->detail->errorstring))$more = $fault->detail->errorstring;
+		throw new Exception("Error ({$fault->faultcode}) {$fault->faultstring} {$more}");
 	}
 }
 
