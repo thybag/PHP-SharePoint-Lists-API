@@ -12,7 +12,7 @@ class NTLM_SoapClient extends SoapClient {
 	 *
 	 * @return	void
 	 */
-	public function __construct($wsdl, $options = array()) {
+	public function __construct($wsdl, array $options = array()) {
 		if (empty($options['proxy_login']) || empty($options['proxy_password'])) {
 			throw new Exception('Login and password required for NTLM authentication!');
 		}
@@ -26,17 +26,17 @@ class NTLM_SoapClient extends SoapClient {
 	/**
 	 * Call a url using curl with ntlm auth
 	 *
-	 * @param string $url
-	 * @param string $data
-	 * @return string
-	 * @throws SoapFault on curl connection error
+	 * @param	string	$url	URL of WSDL file
+	 * @param	string	$data	HTTP/POST data array
+	 * @return	string	$response	Response string in success
+	 * @throws	SoapFault on curl connection error
 	 */
-	protected function callCurl($url, $data) {
+	protected function callCurl($url, array $data) {
 		$handle= curl_init();
 		curl_setopt($handle, CURLOPT_HEADER        , false);
 		curl_setopt($handle, CURLOPT_URL           , $url);
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
-		curl_setopt($handle, CURLOPT_HTTPHEADER    , array("PHP SOAP-NTLM Client") );
+		curl_setopt($handle, CURLOPT_HTTPHEADER    , array('PHP SOAP-NTLM Client') );
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 		curl_setopt($handle, CURLOPT_PROXYUSERPWD  , $this->proxy_login . ':' . $this->proxy_password);
@@ -44,7 +44,7 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_PROXYAUTH     , CURLAUTH_NTLM);
 		$response = curl_exec($handle);
 		if (empty($response)) {
-			throw new SoapFault('CURL error: '.curl_error($handle),curl_errno($handle));
+			throw new SoapFault('CURL error: ' . curl_error($handle), curl_errno($handle));
 		}
 		curl_close($handle);
 		return $response;
