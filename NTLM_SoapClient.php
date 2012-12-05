@@ -27,11 +27,11 @@ class NTLM_SoapClient extends SoapClient {
 	 * Call a url using curl with ntlm auth
 	 *
 	 * @param	string	$url	URL of WSDL file
-	 * @param	string	$data	HTTP/POST data array
+	 * @param	string	$data	HTTP/POST data
 	 * @return	string	$response	Response string in success
 	 * @throws	SoapFault on curl connection error
 	 */
-	protected function callCurl($url, array $data) {
+	protected function callCurl($url, $data) {
 		$handle= curl_init();
 		curl_setopt($handle, CURLOPT_HEADER        , false);
 		curl_setopt($handle, CURLOPT_URL           , $url);
