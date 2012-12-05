@@ -65,26 +65,33 @@ class sharepointAPI{
 	private $MAX_ROWS = 10000;
 	//Place holder for soapObject/SOAP client
 	private $soapObject = null;
-	
+
 	/**
 	 * Constructor
 	 *
 	 * @param User account to authenticate with. (Must have read/write/edit permissions to given Lists)
 	 * @param Password to use with authenticating account.
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
+	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct($sp_user, $sp_pass, $sp_WSDL)
-	{
+	public function __construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
 		$this->spUser = $sp_user;
 		$this->spPass = $sp_pass;
 		$this->wsdl = $sp_WSDL;
 		
 		//Create new SOAP Client
-		try{
-			$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser, 'password' => $this->spPass));
-		}catch(SoapFault $fault){
+		try {
+			// NTLM authentication or regular SOAP client?
+			if ($useNtml === true) {
+				// Use NTLM authentication client
+				$this->soapObject = new NTLM_SoapClient($this->wsdl, array('proxy_login'=> $this->spUser, 'proxy_password' => $this->spPass));
+			} else {
+				// Use regular client (for basic/digest auth)
+				$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser, 'password' => $this->spPass));
+			}
+		} catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
-			throw new Exception("Unable to locate WSDL file.");
+			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faulstring=" . $fault->faulstring);
 		}
 	}
 	
@@ -813,5 +820,65 @@ Class SPQueryObj {
 		if($sort != '') $xml .= $sort;
 		
 		return $xml;
+	}
+}
+
+/**
+ * A child of SoapClient with support for ntlm proxy authentication
+ *
+ * @author Meltir <meltir@meltir.com>
+ * @see http://php.net/manual/en/soapclient.soapclient.php#97029
+ */
+class NTLM_SoapClient extends SoapClient {
+	/**
+	 * Overwritren constructor
+	 *
+	 * @return	void
+	 */
+	public function __construct($wsdl, $options = array()) {
+		if (empty($options['proxy_login']) || empty($options['proxy_password'])) {
+			throw new Exception('Login and password required for NTLM authentication!');
+		}
+		$this->proxy_login = $options['proxy_login'];
+		$this->proxy_password = $options['proxy_password'];
+		$this->proxy_host = (empty($options['proxy_host']) ? 'localhost' : $options['proxy_host']);
+		$this->proxy_port = (empty($options['proxy_port']) ? 8080 : $options['proxy_port']);
+		parent::__construct($wsdl, $options);
+	}
+
+	/**
+	 * Call a url using curl with ntlm auth
+	 *
+	 * @param string $url
+	 * @param string $data
+	 * @return string
+	 * @throws SoapFault on curl connection error
+	 */
+	protected function callCurl($url, $data) {
+		$handle= curl_init();
+		curl_setopt($handle, CURLOPT_HEADER, false);
+		curl_setopt($handle, CURLOPT_URL, $url);
+		curl_setopt($handle, CURLOPT_FAILONERROR, true);
+		curl_setopt($handle, CURLOPT_HTTPHEADER, Array("PHP SOAP-NTLM Client") );
+		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($handle, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($handle, CURLOPT_PROXYUSERPWD,$this->proxy_login.':'.$this->proxy_password);
+		curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host.':'.$this->proxy_port);
+		curl_setopt($handle, CURLOPT_PROXYAUTH, CURLAUTH_NTLM);
+		$response = curl_exec($handle);
+		if (empty($response)) {
+			throw new SoapFault('CURL error: '.curl_error($handle),curl_errno($handle));
+		}
+		curl_close($handle);
+		return $response;
+	}
+
+	/**
+	 * Overwritten method in SoapClient::__doRequest to use CURL now
+	 *
+	 * Notice: $action, $version and $one_way are unsupported
+	 */
+	public function __doRequest($request, $location, $action, $version, $one_way = 0) {
+		return $this->callCurl($location, $request);
 	}
 }
