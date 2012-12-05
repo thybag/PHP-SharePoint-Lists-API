@@ -33,15 +33,15 @@ class NTLM_SoapClient extends SoapClient {
 	 */
 	protected function callCurl($url, $data) {
 		$handle= curl_init();
-		curl_setopt($handle, CURLOPT_HEADER, false);
-		curl_setopt($handle, CURLOPT_URL, $url);
-		curl_setopt($handle, CURLOPT_FAILONERROR, true);
-		curl_setopt($handle, CURLOPT_HTTPHEADER, Array("PHP SOAP-NTLM Client") );
+		curl_setopt($handle, CURLOPT_HEADER        , false);
+		curl_setopt($handle, CURLOPT_URL           , $url);
+		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
+		curl_setopt($handle, CURLOPT_HTTPHEADER    , array("PHP SOAP-NTLM Client") );
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($handle, CURLOPT_POSTFIELDS, $data);
-		curl_setopt($handle, CURLOPT_PROXYUSERPWD,$this->proxy_login.':'.$this->proxy_password);
-		curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host.':'.$this->proxy_port);
-		curl_setopt($handle, CURLOPT_PROXYAUTH, CURLAUTH_NTLM);
+		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
+		curl_setopt($handle, CURLOPT_PROXYUSERPWD  , $this->proxy_login . ':' . $this->proxy_password);
+		curl_setopt($handle, CURLOPT_PROXY         , $this->proxy_host . ':' . $this->proxy_port);
+		curl_setopt($handle, CURLOPT_PROXYAUTH     , CURLAUTH_NTLM);
 		$response = curl_exec($handle);
 		if (empty($response)) {
 			throw new SoapFault('CURL error: '.curl_error($handle),curl_errno($handle));
