@@ -82,7 +82,7 @@ class sharepointAPI{
 		//Create new SOAP Client
 		try {
 			// NTLM authentication or regular SOAP client?
-			if ($useNtml === true) {
+			if ($useNtlm === true) {
 				// Use NTLM authentication client
 				$this->soapObject = new NTLM_SoapClient($this->wsdl, array('proxy_login'=> $this->spUser, 'proxy_password' => $this->spPass));
 			} else {
