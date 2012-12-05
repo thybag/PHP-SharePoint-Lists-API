@@ -71,27 +71,37 @@ class sharepointAPI{
 	 * Whether requests shall be traced
 	 * (compare: http://de.php.net/manual/en/soapclient.soapclient.php )
 	 */
-	private $soap_trace = true;
+	protected $soap_trace = true;
 
 	/**
 	 * Whether SOAP errors throw exception of type SoapFault
 	 */
-	private $soap_exceptions = true;
+	protected $soap_exceptions = true;
 
 	/**
-	 * Kee-Alive HTTP setting
+	 * Kee-Alive HTTP setting (default: 'Connection: close')
 	 */
-	private $soap_keep_alive = 'Connection: close';
+	protected $soap_keep_alive = 'Connection: close';
 
 	/**
-	 * SOAP version number
+	 * SOAP version number (default: SOAP_1_2)
 	 */
-	private $soap_version = SOAP_1_2;
+	protected $soap_version = SOAP_1_2;
 
 	/**
-	 * Cache behaviour for WSDL content
+	 * Cache behaviour for WSDL content (default: WSDL_CACHE_NONE for better debugging)
 	 */
-	private $cache_wsdl = WSDL_CACHE_NONE;
+	protected $cache_wsdl = WSDL_CACHE_NONE;
+
+	/**
+	 * Proxy hostname (default: 'localhost')
+	 */
+	protected $proxyHost = 'localhost';
+
+	/**
+	 * Proxy port (default: 8080)
+	 */
+	protected $proxyPort = 8080;
 
 	/**
 	 * Constructor
@@ -133,7 +143,9 @@ class sharepointAPI{
 				// Use NTLM authentication client
 				$this->soapObject = new NTLM_SoapClient($this->wsdl, array_merge($options, array(
 					'proxy_login'    => $this->spUser,
-					'proxy_password' => $this->spPass
+					'proxy_password' => $this->spPass,
+					'proxy_host'     => $this->proxyHost,
+					'proxy_port'     => $this->proxyPort
 				)));
 			} else {
 				// Use regular client (for basic/digest auth)
