@@ -84,14 +84,23 @@ class sharepointAPI{
 			// NTLM authentication or regular SOAP client?
 			if ($useNtlm === true) {
 				// Use NTLM authentication client
-				$this->soapObject = new NTLM_SoapClient($this->wsdl, array('proxy_login'=> $this->spUser, 'proxy_password' => $this->spPass));
+				$this->soapObject = new NTLM_SoapClient($this->wsdl, array(
+					'keep_alive'     => 'Connection: close',
+					'soap_version'   => SOAP_1_2,
+					'cache_wsdl'     => WSDL_CACHE_NONE,
+					'proxy_login'    => $this->spUser,
+					'proxy_password' => $this->spPass
+				));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapObject = new SoapClient($this->wsdl, array('login'=> $this->spUser, 'password' => $this->spPass));
+				$this->soapObject = new SoapClient($this->wsdl, array(
+					'login'    => $this->spUser,
+					'password' => $this->spPass
+				));
 			}
 		} catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
-			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faultstring=" . $fault->faulstring);
+			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faultstring=" . $fault->faultstring);
 		}
 	}
 	
