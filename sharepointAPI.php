@@ -63,8 +63,35 @@ class sharepointAPI{
 
 	//Maximum rows to return from a List 
 	private $MAX_ROWS = 10000;
+
 	//Place holder for soapObject/SOAP client
 	private $soapObject = null;
+
+	/**
+	 * Whether requests shall be traced
+	 * (compare: http://de.php.net/manual/en/soapclient.soapclient.php )
+	 */
+	private $soap_trace = true;
+
+	/**
+	 * Whether SOAP errors throw exception of type SoapFault
+	 */
+	private $soap_exceptions = true;
+
+	/**
+	 * Kee-Alive HTTP setting
+	 */
+	private $soap_keep_alive = 'Connection: close';
+
+	/**
+	 * SOAP version number
+	 */
+	private $soap_version = SOAP_1_2;
+
+	/**
+	 * Cache behaviour for WSDL content
+	 */
+	private $cache_wsdl = WSDL_CACHE_NONE;
 
 	/**
 	 * Constructor
@@ -79,24 +106,38 @@ class sharepointAPI{
 		$this->spPass = $sp_pass;
 		$this->wsdl = $sp_WSDL;
 		
+		// General options
+		$options = array(
+			'trace'        => $this->soap_trace,
+			'exceptions'   => $this->soap_exceptions,
+			'keep_alive'   => $this->soap_keep_alive,
+			'soap_version' => $this->soap_version,
+			'cache_wsdl'   => $this->cache_wsdl,
+		);
+		
+		// Auto-detect http(s):// URLs
+		if ((substr($this->wsdl, 0, 7) == 'http://') || (substr($this->wsdl, 0, 8) == 'https://')) {
+			// Add location,uri options and set wsdl=null
+			$options['location'] = $this->wsdl;
+			$options['uri']      = $this->wsdl;
+			$this->wsdl = null;
+		}
+		
 		//Create new SOAP Client
 		try {
 			// NTLM authentication or regular SOAP client?
 			if ($useNtlm === true) {
 				// Use NTLM authentication client
-				$this->soapObject = new NTLM_SoapClient($this->wsdl, array(
-					'keep_alive'     => 'Connection: close',
-					'soap_version'   => SOAP_1_2,
-					'cache_wsdl'     => WSDL_CACHE_NONE,
+				$this->soapObject = new NTLM_SoapClient($this->wsdl, array_merge($options, array(
 					'proxy_login'    => $this->spUser,
 					'proxy_password' => $this->spPass
-				));
+				)));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapObject = new SoapClient($this->wsdl, array(
+				$this->soapObject = new SoapClient($this->wsdl, array_merge($options, array(
 					'login'    => $this->spUser,
 					'password' => $this->spPass
-				));
+				)));
 			}
 		} catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
@@ -833,7 +874,8 @@ Class SPQueryObj {
 }
 
 /**
- * A child of SoapClient with support for ntlm proxy authentication
+ * A child of SoapClient with support for ntlm proxy authentication. This class
+ * can be run with ntlmaps.
  *
  * @author Meltir <meltir@meltir.com>
  * @see http://php.net/manual/en/soapclient.soapclient.php#97029
