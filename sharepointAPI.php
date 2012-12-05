@@ -91,7 +91,7 @@ class sharepointAPI{
 			}
 		} catch(SoapFault $fault){
 			//If we are unable to create a Soap Client display a Fatal error.
-			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faulstring=" . $fault->faulstring);
+			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faultstring=" . $fault->faulstring);
 		}
 	}
 	
