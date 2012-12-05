@@ -112,6 +112,10 @@ class sharepointAPI{
 	 * @param Whether to authenticate with NTLM
 	 */
 	public function __construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
+		// Check if required class is found
+		assert(class_exists('SoapClient'));
+		
+		// Set data from parameters in this class
 		$this->spUser = $sp_user;
 		$this->spPass = $sp_pass;
 		$this->wsdl = $sp_WSDL;
