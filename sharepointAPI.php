@@ -162,10 +162,11 @@ class sharepointAPI{
 		}catch(SoapFault $fault){
 			$this->onError($fault);
 		}
+		
 		//Load XML in to DOM document and grab all list items.
 		$dom = new DOMDocument();
 		$dom->loadXML($rawxml);
-		$nodes = $dom->getElementsByTagName("List");
+		$nodes = $dom->getElementsByTagName('List');
 		//Format data in to array or object
 		foreach($nodes as $counter => $node){
 			foreach($node->attributes as $attribute => $value){
@@ -173,7 +174,7 @@ class sharepointAPI{
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
 			//Make object if needed
-			if($this->returnType === 1) settype($results[$counter], "object");
+			if($this->returnType === 1) settype($results[$counter], 'object');
 		}
 		//Add error array if stuff goes wrong.
 		if(!isset($results)) $results = array('warning' => 'No data returned.');
@@ -207,7 +208,7 @@ class sharepointAPI{
 		//Load XML in to DOM document and grab all Fields
 		$dom = new DOMDocument();
 		$dom->loadXML($rawxml);
-		$nodes = $dom->getElementsByTagName("Field");
+		$nodes = $dom->getElementsByTagName('Field');
 		
 		//Format data in to array or object
 		foreach($nodes as $counter => $node){
@@ -229,7 +230,7 @@ class sharepointAPI{
 			$results[$counter]['value'] = $inner_xml;
 			
 			//Make object if needed
-			if($this->returnType === 1) settype($results[$counter], "object");
+			if($this->returnType === 1) settype($results[$counter], 'object');
 		}
 		//Add error array if stuff goes wrong.
 		if(!isset($results)) $results = array('warning' => 'No data returned.');
@@ -445,7 +446,7 @@ class sharepointAPI{
 		//Use DOMDocument to proccess XML
 		$dom = new DOMDocument();
 		$dom->loadXML($rawXML);
-		$results = $dom->getElementsByTagNameNS("#RowsetSchema", "*");
+		$results = $dom->getElementsByTagNameNS('#RowsetSchema', '*');
 		
 		//Proccess Object and return a nice clean assoaitive array of the results
 		foreach($results as $i => $result){
@@ -459,7 +460,7 @@ class sharepointAPI{
 			//If set, change array in to an object.
 			//
 			//Feature based on implementation by dcarbone  (See: https://github.com/dcarbone/ )
-			if($this->returnType === 1) settype($resultArray[$i], "object");
+			if($this->returnType === 1) settype($resultArray[$i], 'object');
 			
 		}
 		//Check some values were actually returned
