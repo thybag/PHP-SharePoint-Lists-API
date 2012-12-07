@@ -89,6 +89,12 @@ class sharepointAPI{
 	protected $soap_version = SOAP_1_1;
 
 	/**
+	 * Compression
+	 * Example: SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP
+	 */
+	protected $soap_compression = 0;
+
+	/**
 	 * Cache behaviour for WSDL content (default: WSDL_CACHE_NONE for better debugging)
 	 */
 	protected $cache_wsdl = WSDL_CACHE_NONE;
@@ -102,7 +108,6 @@ class sharepointAPI{
 	 * Proxy port (default: 8080)
 	 */
 	protected $proxyPort = 8080;
-
 	/**
 	 * Constructor
 	 *
@@ -127,6 +132,7 @@ class sharepointAPI{
 			'keep_alive'   => $this->soap_keep_alive,
 			'soap_version' => $this->soap_version,
 			'cache_wsdl'   => $this->cache_wsdl,
+			'compression'  => $this->soap_compression,
 		);
 		
 		// Auto-detect http(s):// URLs

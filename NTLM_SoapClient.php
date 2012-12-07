@@ -39,7 +39,7 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
 		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
 			'User-Agent: PHP SOAP-NTLM Client/1.0',
-			'SOAPAction: ' . $action
+			'SOAPAction: ' . $action,
 		));
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
@@ -47,10 +47,17 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_PROXY         , $this->proxy_host . ':' . $this->proxy_port);
 		curl_setopt($handle, CURLOPT_PROXYAUTH     , CURLAUTH_NTLM);
 		$response = curl_exec($handle);
+
+		// Is the response empty?
 		if (empty($response)) {
+			// Throw exception
 			throw new SoapFault('CURL error: ' . curl_error($handle), curl_errno($handle));
 		}
+
+		// Free some resources
 		curl_close($handle);
+
+		// Return response
 		return $response;
 	}
 
