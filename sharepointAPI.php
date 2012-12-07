@@ -84,9 +84,9 @@ class sharepointAPI{
 	protected $soap_keep_alive = 'Connection: close';
 
 	/**
-	 * SOAP version number (default: SOAP_1_2)
+	 * SOAP version number (default: SOAP_1_1)
 	 */
-	protected $soap_version = SOAP_1_2;
+	protected $soap_version = SOAP_1_1;
 
 	/**
 	 * Cache behaviour for WSDL content (default: WSDL_CACHE_NONE for better debugging)
@@ -111,7 +111,7 @@ class sharepointAPI{
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
+	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 		
@@ -158,7 +158,7 @@ class sharepointAPI{
 					'password' => $this->spPass
 				)));
 			}
-		} catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			// If we are unable to create a Soap Client display a Fatal error.
 			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->faultcode . ",faultstring=" . $fault->faultstring);
 		}
@@ -171,11 +171,11 @@ class sharepointAPI{
 	 *
 	 * @return array (array) | array (object)
 	 */
-	public function getLists(){
+	public function getLists () {
 		// Query Sharepoint for full listing of it's lists.
-		try{
+		try {
 			$rawxml = $this->soapObject->GetListCollection()->GetListCollectionResult->any;
-		}catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
 		
@@ -184,16 +184,16 @@ class sharepointAPI{
 		$dom->loadXML($rawxml);
 		$nodes = $dom->getElementsByTagName('List');
 		// Format data in to array or object
-		foreach($nodes as $counter => $node){
-			foreach($node->attributes as $attribute => $value){
+		foreach ($nodes as $counter => $node) {
+			foreach ($node->attributes as $attribute => $value) {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
 			// Make object if needed
-			if($this->returnType === 1) settype($results[$counter], 'object');
+			if ($this->returnType === 1) settype($results[$counter], 'object');
 		}
 		// Add error array if stuff goes wrong.
-		if(!isset($results)) $results = array('warning' => 'No data returned.');
+		if (!isset($results)) $results = array('warning' => 'No data returned.');
 		
 		return $results;
 	}
@@ -207,7 +207,7 @@ class sharepointAPI{
 	*
 	* @return Array
 	*/
-	public function readListMeta($list, $hideInternal = true){
+	public function readListMeta ($list, $hideInternal = true) {
 		// Ready XML
 		$CAML = '
 			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
@@ -216,9 +216,9 @@ class sharepointAPI{
 		';
 		$rawxml ='';
 		// Attempt to query Sharepoint
-		try{
+		try {
 			$rawxml = $this->soapObject->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
-		}catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
 		// Load XML in to DOM document and grab all Fields
@@ -227,30 +227,30 @@ class sharepointAPI{
 		$nodes = $dom->getElementsByTagName('Field');
 		
 		// Format data in to array or object
-		foreach($nodes as $counter => $node){
+		foreach ($nodes as $counter => $node) {
 			// Empty inner_xml
 			$inner_xml ='';
 
 			// Attempt to hide none useful feilds (disable by setting second param to false)
-			if($hideInternal) if($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {continue;}
+			if ($hideInternal) if ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {continue;}
 
 			// Get Attributes
-			foreach($node->attributes as $attribute => $value){
+			foreach ($node->attributes as $attribute => $value) {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
 
 			// Get contents (Raw xml)
-			foreach($node->childNodes as $childNode){
+			foreach ($node->childNodes as $childNode) {
 				$inner_xml .= $node->ownerDocument->saveXml($childNode);
 			}
 			$results[$counter]['value'] = $inner_xml;
 
 			// Make object if needed
-			if($this->returnType === 1) settype($results[$counter], 'object');
+			if ($this->returnType === 1) settype($results[$counter], 'object');
 		}
 		//  Add error array if stuff goes wrong.
-		if(!isset($results)) $results = array('warning' => 'No data returned.');
+		if (!isset($results)) $results = array('warning' => 'No data returned.');
 
 		// Return a XML as nice clean Array or Object
 		return $results;
@@ -268,21 +268,21 @@ class sharepointAPI{
 	 *
 	 * @return Array
 	 */
-	public function read($list, $limit = null, $query = null, $view = null, $sort = null){
+	public function read ($list, $limit = null, $query = null, $view = null, $sort = null) {
 		// Check limit is set
-		if($limit<1 || $limit == null) $limit = $this->MAX_ROWS;
+		if ($limit<1 || $limit == null) $limit = $this->MAX_ROWS;
 		// Create Query XML is query is being used
 		$xml_options= ''; $xml_query='';
 		// Setup Options
-		if(gettype($query)=='object' && get_class($query)=='SPQueryObj'){
+		if (gettype($query)=='object' && get_class($query)=='SPQueryObj') {
 			$xml_query = $query->getCAML();
-		}else{
-			if($view != null) 	$xml_options .= "<viewName>{$view}</viewName>";
-			if($query != null)	$xml_query .= $this->whereXML($query);// Build Query
-			if($sort != null)	$xml_query .= $this->sortXML($sort);
+		} else{
+			if ($view != null) 	$xml_options .= "<viewName>{$view}</viewName>";
+			if ($query != null)	$xml_query .= $this->whereXML($query);// Build Query
+			if ($sort != null)	$xml_query .= $this->sortXML($sort);
 		}
 		// If query is required
-		if($xml_query!='') $xml_options .= "<query><Query>{$xml_query}</Query></query>";
+		if ($xml_query!='') $xml_options .= "<query><Query>{$xml_query}</Query></query>";
 		// Setup basic XML for quering a sharepoint list.
 		// If rowLimit is not provided sharepoint will defualt to a limit of 100 items.
 		$CAML = '
@@ -297,9 +297,9 @@ class sharepointAPI{
 		// Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to query Sharepoint
-		try{
+		try {
 			$result = $this->xmlHandler($this->soapObject->GetListItems($xmlvar)->GetListItemsResult->any);
-		}catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			$this->onError($fault);
 			$result = null;
 		}
@@ -316,12 +316,12 @@ class sharepointAPI{
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function write($list, $data){
+	public function write ($list, $data) {
 		return $this->writeMultiple($list, array($data));
 	}
 	// Alias (Identical to above)
-	public function add($list, $data){return $this->write($list, $data);}
-	public function insert($list, $data){return $this->write($list, $data);}
+	public function add ($list, $data) {return $this->write($list, $data);}
+	public function insert ($list, $data) {return $this->write($list, $data);}
 
 	/**
 	 * WriteMultiple
@@ -331,12 +331,12 @@ class sharepointAPI{
 	 * @param Array of arrays Assosative array's describing data to store
 	 * @return Array
 	 */
-	public function writeMultiple($list, $items){
+	public function writeMultiple ($list, $items) {
 		return $this->modifyList($list, $items, 'New');
 	}
 	// Alias (Identical to above)
-	public function addMultiple($list, $items){return $this->writeMultiple($list, $items);}
-	public function insertMultiple($list, $items){return $this->writeMultiple($list, $items);}
+	public function addMultiple ($list, $items) {return $this->writeMultiple($list, $items);}
+	public function insertMultiple ($list, $items) {return $this->writeMultiple($list, $items);}
 	
 	/**
 	 * Update
@@ -347,7 +347,7 @@ class sharepointAPI{
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update($list, $ID, $data){
+	public function update ($list, $ID, $data) {
 		// Add ID to item
 		$data['ID'] = $ID;
 		return $this->updateMultiple($list, array($data));
@@ -361,7 +361,7 @@ class sharepointAPI{
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple($list, $items){
+	public function updateMultiple ($list, $items) {
 		return $this->modifyList($list, $items, 'Update');
 	}
 	
@@ -373,7 +373,7 @@ class sharepointAPI{
 	 * @param int $ID ID of item to delete
 	 * @return Array
 	 */
-	public function delete($list, $ID){
+	public function delete ($list, $ID) {
 
 		// CAML query (request), add extra Fields as necessary
 		$CAML ="
@@ -390,9 +390,9 @@ class sharepointAPI{
 		 
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to run operation
-		try{
+		try {
 			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
-		}catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
 		// Return a XML as nice clean Array
@@ -406,10 +406,10 @@ class sharepointAPI{
 	 *
 	 * @param $type
 	 */
-	public function setReturnType($type){
-		if(trim(strtolower($type)) == 'object'){
+	public function setReturnType ($type) {
+		if (trim(strtolower($type)) == 'object') {
 			$this->returnType = 1;
-		}else{
+		} else{
 			$this->returnType = 0;
 		}
 	}
@@ -422,7 +422,7 @@ class sharepointAPI{
 	 *
 	 * @param $enable true|false
 	 */
-	public function lowercaseIndexs($enable){
+	public function lowercaseIndexs ($enable) {
 		$this->lower_case_indexs = ($enable === true);
 	}
 
@@ -435,7 +435,7 @@ class sharepointAPI{
 	 * @param List name / GUID number
 	 * @return SP List Item
 	 */
-	public function query($table){
+	public function query ($table) {
 		return new SPQueryObj($table, $this);
 	}
 	
@@ -446,7 +446,7 @@ class sharepointAPI{
 	 * @param $list Name of list to provide CRUD for.
 	 * @return ListCRUD Object
 	 */
-	public function CRUD($list){
+	public function CRUD ($list) {
 		return new ListCRUD($list, $this);
 	}
 	
@@ -459,16 +459,16 @@ class sharepointAPI{
 	 * @param $rawXML XML DATA returned by SOAP
 	 * @return Array( Array ) | Array( Object )
 	 */
-	private function xmlHandler($rawXML){
+	private function xmlHandler ($rawXML) {
 		// Use DOMDocument to proccess XML
 		$dom = new DOMDocument();
 		$dom->loadXML($rawXML);
 		$results = $dom->getElementsByTagNameNS('#RowsetSchema', '*');
 		
 		// Proccess Object and return a nice clean assoaitive array of the results
-		foreach($results as $i => $result){
+		foreach ($results as $i => $result) {
 			$resultArray[$i] = array();
-			foreach($result->attributes as $attribute=> $value){
+			foreach ($result->attributes as $attribute=> $value) {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				//  Re-assign all the attributes into an easy to access array
 				$resultArray[$i][str_replace('ows_','',$idx)] = $result->getAttribute($attribute);
@@ -477,11 +477,11 @@ class sharepointAPI{
 			// If set, change array in to an object.
 			//
 			// Feature based on implementation by dcarbone  (See: https://github.com/dcarbone/ )
-			if($this->returnType === 1) settype($resultArray[$i], 'object');
+			if ($this->returnType === 1) settype($resultArray[$i], 'object');
 			
 		}
 		// Check some values were actually returned
-		if(!isset($resultArray)) $resultArray = array('warning' => 'No data returned.');
+		if (!isset($resultArray)) $resultArray = array('warning' => 'No data returned.');
 		
 		return $resultArray;
 	}
@@ -493,15 +493,14 @@ class sharepointAPI{
 	 * @param Array $q array('<col>' => '<value_to_match_on>')
 	 * @return XML DATA
 	 */
-	private function whereXML($q){
-		
+	private function whereXML ($q) {
 		$queryString ='';
 		$counter = 0;
-		foreach($q as $col => $value){
+		foreach ($q as $col => $value) {
 			$counter++;
 			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.htmlspecialchars($value).'</Value></Eq>';
 			// Add additional "and"s if there are multiple query levels needed.
-			if($counter>=2) $queryString = "<And>{$queryString}</And>";
+			if ($counter>=2) $queryString = "<And>{$queryString}</And>";
 		}
 		
 		return "<Where>{$queryString}</Where>";
@@ -514,13 +513,13 @@ class sharepointAPI{
 	 * @param Array $sort array('<col>' => 'asc | desc')
 	 * @return XML DATA
 	 */
-	private function sortXML($sort){
-		if($sort == null || !is_array($sort)){ return ''; }
+	private function sortXML ($sort) {
+		if ($sort == null || !is_array($sort)) { return ''; }
 		
 		$queryString ='';
-		foreach($sort as $col => $value){
+		foreach ($sort as $col => $value) {
 			$s = 'false';
-			if($value == 'ASC' || $value == 'asc' || $value == 'true' || $value == 'ascending') $s = 'true';
+			if ($value == 'ASC' || $value == 'asc' || $value == 'true' || $value == 'ascending') $s = 'true';
 			$queryString .= '<FieldRef Name="'.$col.'" Ascending="'.$s.'" />';
 		}
 		return "<OrderBy>{$queryString}</OrderBy>";
@@ -537,8 +536,7 @@ class sharepointAPI{
 	 * @param $method New/Update
 	 * @return Array|Object
 	 */
-	public function modifyList($list, $items, $method){
-
+	public function modifyList ($list, $items, $method) {
 		// Get batch XML
 		$commands = $this->prepBatch($items, $method);
 		// Wrap in CAML
@@ -553,9 +551,9 @@ class sharepointAPI{
 		 </UpdateListItems>";
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to run operation
-		try{
+		try {
 			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
-		}catch(SoapFault $fault){
+		} catch (SoapFault $fault) {
 			$this->onError($fault);
 			$result = null;
 		}
@@ -572,17 +570,17 @@ class sharepointAPI{
 	 * @param $method New/Update
 	 * @return XML
 	 */
-	public function prepBatch($items, $method){
+	public function prepBatch ($items, $method) {
 		// Get var's needed
 		$batch = '';
 		$counter = 1;
 		$method = ($method == 'Update') ? 'Update' : 'New';
 		// Foreach item to be converted in to a SharePoint Soap Command
-		foreach($items as $data){
+		foreach ($items as $data) {
 			// Wrap item in command for given method
 			$batch .= "<Method Cmd='{$method}' ID='{$counter}'>";
 			// Add required attributes
-			foreach($data AS $itm => $val){
+			foreach ($data AS $itm => $val) {
 				$val = htmlspecialchars($val);
 				$batch .= "<Field Name='{$itm}'>{$val}</Field>\n";
 			}
@@ -601,10 +599,13 @@ class sharepointAPI{
 	 * @return Object SoapClient
 	 * @depricated (this should no longer be used)
 	 */
-	private function createSoapObject(){
-			try{
-				return new SoapClient($this->wsdl, array('login'=> $this->spUser ,'password' => $this->spPass));
-			}catch(SoapFault $fault){
+	private function createSoapObject () {
+			try {
+				return new SoapClient($this->wsdl, array(
+					'login'=> $this->spUser,
+					'password' => $this->spPass
+				));
+			} catch (SoapFault $fault) {
 				// If we are unable to create a Soap Client display a Fatal error.
 				die("Fatal Error: Unable to locate WSDL file.");
 			}
@@ -617,9 +618,9 @@ class sharepointAPI{
 	 * @param $fault Error Information
 	 * @throws Exception
 	 */
-	private function onError($fault){
+	private function onError ($fault) {
 		$more = '';
-		if(isset($fault->detail->errorstring))$more = $fault->detail->errorstring;
+		if (isset($fault->detail->errorstring))$more = $fault->detail->errorstring;
 		throw new Exception("Error ({$fault->faultcode}) {$fault->faultstring} {$more}");
 	}
 }
@@ -643,7 +644,7 @@ class ListCRUD {
 	 * @param $list_name Name of List to use
 	 * @param $api Reference to SharePoint API object.
 	 */
-	public function __construct($list_name, $api)
+	public function __construct ($list_name, $api)
 	{
 		$this->api = $api;
 		$this->list = $list_name;
@@ -656,7 +657,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function create($data){
+	public function create ($data) {
 		return $this->api->write($this->list, $data);
 	}
 
@@ -667,7 +668,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function createMultiple($data){
+	public function createMultiple ($data) {
 		return $this->api->writeMultiple($this->list, $data);
 	}
 	
@@ -679,7 +680,7 @@ class ListCRUD {
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read($limit=0, $query=null){
+	public function read ($limit=0, $query=null) {
 		return $this->api->read($this->list, $limit, $query, $view, $sort);
 	}
 	
@@ -691,7 +692,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update($item_id, $data){
+	public function update ($item_id, $data) {
 		return $this->api->update($this->list, $item_id, $data);
 	}
 
@@ -702,7 +703,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple($data){
+	public function updateMultiple ($data) {
 		return $this->api->updateMultiple($this->list, $data);
 	}
 	
@@ -713,7 +714,7 @@ class ListCRUD {
 	 * @param int $item_id ID of item to delete
 	 * @return Array
 	 */
-	public function delete($item_id){
+	public function delete ($item_id) {
 		return $this->api->delete($this->list, $item_id);
 	}
 
@@ -723,7 +724,7 @@ class ListCRUD {
 	 *
 	 * @return SP List Item
 	 */
-	public function query(){
+	public function query () {
 		return new SPQueryObj($this->list, $this->api);
 	}
 }
@@ -751,7 +752,7 @@ Class SPQueryObj {
 	 * @param $list List to Query
 	 * @param $api Reference to SP API
 	 */
-	public function __construct($list, $api){
+	public function __construct ($list, $api) {
 		$this->table = $list;
 		$this->api = $api;
 	}
@@ -764,7 +765,7 @@ Class SPQueryObj {
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
-	public function where($col,$test,$val){
+	public function where ($col,$test,$val) {
 		return $this->addQueryLine('where',$col,$test,$val);
 	}
 
@@ -777,7 +778,7 @@ Class SPQueryObj {
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
-	public function and_where($col,$test,$val){
+	public function and_where ($col,$test,$val) {
 		return $this->addQueryLine('and',$col,$test,$val);
 	}
 
@@ -790,7 +791,7 @@ Class SPQueryObj {
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
-	public function or_where($col,$test,$val){
+	public function or_where ($col,$test,$val) {
 		return $this->addQueryLine('or',$col,$test,$val);
 	}
 
@@ -801,7 +802,7 @@ Class SPQueryObj {
 	 * @param $limit number of items to return
 	 * @return Ref to self
 	 */
-	public function limit($limit){
+	public function limit ($limit) {
 		$this->limit = $limit;
 		return $this;
 	}
@@ -813,7 +814,7 @@ Class SPQueryObj {
 	 * @param $view Name/GUID
 	 * @return Ref to self
 	 */
-	public function using($view){
+	public function using ($view) {
 		$this->view = $view;
 		return $this;
 	}
@@ -826,9 +827,9 @@ Class SPQueryObj {
 	 * @param $order Sort direction
 	 * @return Ref to self
 	 */
-	public function sort($sort_on, $order = 'DESC'){
+	public function sort ($sort_on, $order = 'DESC') {
 		$s = 'false';
-		if($order == 'ASC' || $order == 'asc' || $order == 'true' || $order == 'ascending') $s = 'true';
+		if ($order == 'ASC' || $order == 'asc' || $order == 'true' || $order == 'ascending') $s = 'true';
 		
 		$queryString = '<FieldRef Name="'.$sort_on.'" Ascending="'.$s.'" />';
 		$this->sort_caml = "<OrderBy>{$queryString}</OrderBy>";
@@ -842,7 +843,7 @@ Class SPQueryObj {
 	 * @return Array: Sharepoint List Data 
 	 *
 	 */
-	public function get(){
+	public function get () {
 		return $this->api->read($this->table, $this->limit, $this, $this->view);
 	}
 
@@ -857,20 +858,20 @@ Class SPQueryObj {
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
-	private function addQueryLine($rel, $col, $test, $value){
+	private function addQueryLine ($rel, $col, $test, $value) {
 		// Check tests are usable
-		if(!in_array($test,array('!=','>=', '<=', '<','>','='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
+		if (!in_array($test,array('!=','>=', '<=', '<','>','='))) die("Unrecognised query paramiter. Please use <,>,= or !=");
 		$test = str_replace(array('!=','>=', '<=', '<','>','='), array('Neq','Geq', 'Leq','Lt','Gt','Eq'), $test);
 		// Create caml
 		$caml = $this->where_caml;
 		$content = '<FieldRef Name="'.$col.'" /><Value Type="Text">'. htmlspecialchars($value).'</Value>'."\n";
 		$caml .= "<{$test}>{$content}</{$test}>";
 		// Attach relations
-		if($rel=='and'){
+		if ($rel=='and') {
 			$this->where_caml = "<And>{$caml}</And>";
-		}else if($rel == 'or'){
+		} else if ($rel == 'or') {
 			$this->where_caml = "<Or>{$caml}</Or>";
-		}else if($rel = 'where'){
+		} else if ($rel = 'where') {
 			$this->where_caml = $caml;
 		}
 		// return self
@@ -882,13 +883,13 @@ Class SPQueryObj {
 	 * Combine and return the raw CAML data for the query operation that has been specified.
 	 * @return CAML Code (XML)
 	 */
-	public function getCAML(){
+	public function getCAML () {
 		$xml = $this->where_caml;
 		$sort =	$this->sort_caml;
 		// Add where
-		if($xml != '') $xml = "<Where>{$this->where_caml}</Where>";
+		if ($xml != '') $xml = "<Where>{$this->where_caml}</Where>";
 		// add sort
-		if($sort != '') $xml .= $sort;
+		if ($sort != '') $xml .= $sort;
 		
 		return $xml;
 	}

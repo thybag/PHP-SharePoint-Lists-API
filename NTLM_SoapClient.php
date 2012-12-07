@@ -12,7 +12,7 @@ class NTLM_SoapClient extends SoapClient {
 	 *
 	 * @return	void
 	 */
-	public function __construct($wsdl, array $options = array()) {
+	public function __construct ($wsdl, array $options = array()) {
 		if (empty($options['proxy_login']) || empty($options['proxy_password'])) {
 			throw new Exception('Login and password required for NTLM authentication!');
 		}
@@ -28,15 +28,19 @@ class NTLM_SoapClient extends SoapClient {
 	 *
 	 * @param	string	$url	URL of WSDL file
 	 * @param	string	$data	HTTP/POST data
+	 * @param	string	$action	SOAP action
 	 * @return	string	$response	Response string in success
 	 * @throws	SoapFault on curl connection error
 	 */
-	protected function callCurl($url, $data) {
-		$handle= curl_init();
+	protected function callCurl ($url, $data, $action) {
+		$handle = curl_init();
 		curl_setopt($handle, CURLOPT_HEADER        , false);
 		curl_setopt($handle, CURLOPT_URL           , $url);
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
-		curl_setopt($handle, CURLOPT_HTTPHEADER    , array('PHP SOAP-NTLM Client') );
+		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
+			'User-Agent: PHP SOAP-NTLM Client/1.0',
+			'SOAPAction: ' . $action
+		));
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 		curl_setopt($handle, CURLOPT_PROXYUSERPWD  , $this->proxy_login . ':' . $this->proxy_password);
@@ -53,9 +57,10 @@ class NTLM_SoapClient extends SoapClient {
 	/**
 	 * Overwritten method in SoapClient::__doRequest to use CURL now
 	 *
-	 * Notice: $action, $version and $one_way are unsupported
+	 * Notice: $version and $one_way are unsupported
 	 */
-	public function __doRequest($request, $location, $action, $version, $one_way = 0) {
-		return $this->callCurl($location, $request);
+	public function __doRequest ($request, $location, $action, $version, $one_way = 0) {
+		//* DEBUG: */ print 'action=' . $action . ',version=' . $version . ',one_way[' . gettype($one_way) . ']=' . intval($one_way) . PHP_EOL;
+		return $this->callCurl($location, $request, $action);
 	}
 }
