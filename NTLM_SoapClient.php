@@ -29,12 +29,33 @@ class NTLM_SoapClient extends SoapClient {
 	 * @param	string	$url	URL of WSDL file
 	 * @param	string	$data	HTTP/POST data
 	 * @param	string	$action	SOAP action
+	 * @param	string	$version	SOAP version
 	 * @return	string	$response	Response string in success
+	 * @throws	SoapFault if SOAP version is not 1.1 or 1.2
 	 * @throws	SoapFault on curl connection error
 	 */
-	protected function callCurl ($url, $data, $action) {
+	protected function callCurl ($url, $data, $action, $version) {
 		// Remove \n,\r as they may cause problems
 		$data = str_replace(chr(10), '', str_replace(chr(13), '', $data));
+
+		// Initialize variable
+		$contentType = '';
+
+		// Detect version and choose correct content type
+		switch ($version) {
+			case SOAP_1_1:
+				$contentType = 'text/xml; charset=utf-8';
+				break;
+
+			case SOAP_1_2:
+				$contentType = 'application/soap+xml; charset=utf-8';
+				break;
+
+			default:
+				// Throw exception
+				throw new SoapFault('Could not detect SOAP version ' . $version, 0);
+				break;
+		}
 
 		// Get CURL handle
 		$handle = curl_init();
@@ -54,7 +75,7 @@ class NTLM_SoapClient extends SoapClient {
 			 * - application/xml = 415
 			 * - application/x-www-form-urlencoded = 415
 			 */
-			//'Content-Type: text/xml',
+			'Content-Type: ' . $contentType,
 		));
 
 		// ???
@@ -91,6 +112,6 @@ class NTLM_SoapClient extends SoapClient {
 	 */
 	public function __doRequest ($request, $location, $action, $version, $one_way = 0) {
 		//* DEBUG: */ print 'action=' . $action . ',version=' . $version . ',one_way[' . gettype($one_way) . ']=' . intval($one_way) . PHP_EOL;
-		return $this->callCurl($location, $request, $action);
+		return $this->callCurl($location, $request, $action, $version);
 	}
 }
