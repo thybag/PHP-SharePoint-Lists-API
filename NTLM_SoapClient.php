@@ -33,6 +33,9 @@ class NTLM_SoapClient extends SoapClient {
 	 * @throws	SoapFault on curl connection error
 	 */
 	protected function callCurl ($url, $data, $action) {
+		// Remove \n,\r as they may cause problems
+		$data = str_replace(chr(10), '', str_replace(chr(13), '', $data));
+
 		// Get CURL handle
 		$handle = curl_init();
 
@@ -45,8 +48,12 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
 			'User-Agent: PHP SOAP-NTLM Client/1.0',
 			'SOAPAction: ' . $action,
-			// The following content types causes a HTTP error code:
-			// text/xml = 400, application/xml = 414, default = 415
+			/*
+			 * The following content types causes a HTTP error code:
+			 * - text/xml = 400
+			 * - application/xml = 415
+			 * - application/x-www-form-urlencoded = 415
+			 */
 			//'Content-Type: text/xml',
 		));
 
@@ -65,7 +72,7 @@ class NTLM_SoapClient extends SoapClient {
 		$response = curl_exec($handle);
 
 		// Is the response empty?
-		if (empty($response)) {
+		if ($response === false) {
 			// Throw exception
 			throw new SoapFault('CURL error: ' . curl_error($handle), curl_errno($handle));
 		}
