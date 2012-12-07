@@ -33,19 +33,35 @@ class NTLM_SoapClient extends SoapClient {
 	 * @throws	SoapFault on curl connection error
 	 */
 	protected function callCurl ($url, $data, $action) {
+		// Get CURL handle
 		$handle = curl_init();
+
+		// Other options (including URL)
 		curl_setopt($handle, CURLOPT_HEADER        , false);
 		curl_setopt($handle, CURLOPT_URL           , $url);
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
+
+		// HTTP headers
 		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
 			'User-Agent: PHP SOAP-NTLM Client/1.0',
 			'SOAPAction: ' . $action,
+			// The following content types causes a HTTP error code:
+			// text/xml = 400, application/xml = 414, default = 415
+			//'Content-Type: text/xml',
 		));
+
+		// ???
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
+		// Set POST data
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
+
+		// Proxy auth
 		curl_setopt($handle, CURLOPT_PROXYUSERPWD  , $this->proxy_login . ':' . $this->proxy_password);
 		curl_setopt($handle, CURLOPT_PROXY         , $this->proxy_host . ':' . $this->proxy_port);
 		curl_setopt($handle, CURLOPT_PROXYAUTH     , CURLAUTH_NTLM);
+
+		// Execute the request
 		$response = curl_exec($handle);
 
 		// Is the response empty?
