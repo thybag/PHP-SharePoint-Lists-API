@@ -102,6 +102,7 @@ class NTLM_SoapClient extends SoapClient {
 		if ((!empty($this->proxy_host)) && (!empty($this->proxy_port))) {
 			// Set proxy hostname:port
 			curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host . ':' . $this->proxy_port);
+			curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
 		}
 
 		// Execute the request
