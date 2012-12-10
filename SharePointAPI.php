@@ -110,9 +110,9 @@ class sharepointAPI{
 	protected $proxyPassword = '';
 
 	/**
-	 * Proxy hostname (default: 'localhost')
+	 * Proxy hostname (default: EMPTY)
 	 */
-	protected $proxyHost = 'localhost';
+	protected $proxyHost = '';
 
 	/**
 	 * Proxy port (default: 8080)
