@@ -4,7 +4,7 @@
  *
  * @author Roland Haeder<roland mxchange org>
  */
-class MySharePointAPI extends SharePointAPI {
+class ExampleSharePointAPI extends SharePointAPI {
 	/**
 	 * Overwritten constructor
 	 *
