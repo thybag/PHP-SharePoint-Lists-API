@@ -377,7 +377,7 @@ class SharePointAPI {
 				$xml_options .= '<viewName>' . $view . '</viewName>';
 			}
 			if (!is_null($query)) {
-				$xml_query .= $this->whereXML($query);// Build Query
+				$xml_query .= $this->whereXML($query); // Build Query
 			}
 			if (!is_null($sort)) {
 				$xml_query .= $this->sortXML($sort);
@@ -416,7 +416,6 @@ class SharePointAPI {
 
 		// Return a XML as nice clean Array
 		return $result;
-
 	}
 
 	/**
@@ -774,34 +773,15 @@ class SharePointAPI {
 		// Return XML data.
 		return $batch;
 	}
-	
-	/**
-	 * Create Soap Object
-	 * Creates and returns a new SOAPClient Object
-	 *
-	 * @return Object SoapClient
-	 * @depricated (this should no longer be used)
-	 */
-	private function createsoapClient () {
-			try {
-				return new SoapClient($this->spWsdl, array(
-					'login'    => $this->spUser,
-					'password' => $this->spPass
-				));
-			} catch (SoapFault $fault) {
-				// If we are unable to create a Soap Client display a Fatal error.
-				die('Fatal Error: Unable to locate WSDL file ' . $this->spWsdl . '.');
-			}
-	}
-	
+
 	/**
 	 * onError
 	 * This is called when sharepoint throws an error and displays basic debug info.
 	 *
-	 * @param $fault Error Information
-	 * @throws Exception
+	 * @param	$fault		Error Information
+	 * @throws	Exception	Puts data from $fault into an other exception
 	 */
-	private function onError ($fault) {
+	private function onError (SoapFault $fault) {
 		$more = '';
 		if (isset($fault->detail->errorstring)) {
 			$more = 'Detailed: ' . $fault->detail->errorstring;
