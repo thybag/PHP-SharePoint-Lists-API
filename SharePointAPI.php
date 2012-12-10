@@ -191,7 +191,11 @@ class sharepointAPI{
 	 * @return	mixed	$returned		Returned values
 	 */
 	public final function __call ($methodName, $methodParams) {
-		// Is soapClient set?
+		/*
+		 * Is soapClient set? This check may look double here but in later
+		 * developments it might help to trace bugs better and it avoids calls
+		 * on wrong classes if $soapClient got set to something not SoapClient.
+		 */
 		if (!$this->soapClient instanceof SoapClient) {
 			// Is not set
 			throw new Exception('Variable soapClient is not a SoapClient class, have: ' . gettype($this->soapClient), 0xFF);
