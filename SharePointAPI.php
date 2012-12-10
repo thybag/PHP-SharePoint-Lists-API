@@ -258,7 +258,7 @@ class SharePointAPI {
 		}
 
 		// Load XML in to DOM document and grab all list items.
-		$nodes = $this->getArrayFromElementsTagName($rawXml, 'List');
+		$nodes = $this->getArrayFromElementsByTagName($rawXml, 'List');
 
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
