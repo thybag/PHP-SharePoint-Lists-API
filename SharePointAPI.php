@@ -64,8 +64,8 @@ class sharepointAPI{
 	// Maximum rows to return from a List 
 	private $MAX_ROWS = 10000;
 
-	// Place holder for soapObject/SOAP client
-	private $soapObject = null;
+	// Place holder for soapClient/SOAP client
+	private $soapClient = null;
 
 	/**
 	 * Whether requests shall be traced
@@ -162,7 +162,7 @@ class sharepointAPI{
 				require_once 'NTLM_SoapClient.php';
 				
 				// Use NTLM authentication client
-				$this->soapObject = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
+				$this->soapClient = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
 					'login'          => $this->spUser,
 					'password'       => $this->spPass,
 					'proxy_login'    => $this->proxyLogin,
@@ -172,7 +172,7 @@ class sharepointAPI{
 				)));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapObject = new SoapClient($this->spWsdl, array_merge($options, array(
+				$this->soapClient = new SoapClient($this->spWsdl, array_merge($options, array(
 					'login'    => $this->spUser,
 					'password' => $this->spPass
 				)));
@@ -182,7 +182,34 @@ class sharepointAPI{
 			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->getCode() . ",faultstring=" . $fault->getMessage());
 		}
 	}
-	
+
+	/**
+	 * Calls methods on SOAP object
+	 *
+	 * @param	string	$methodName		Name of method to call
+	 * @param	string	$methodParams	Parameters to handle over
+	 * @return	mixed	$returned		Returned values
+	 */
+	public final function __call ($methodName, $methodParams) {
+		// Is soapClient set?
+		if (!$this->soapClient instanceof SoapClient) {
+			// Is not set
+			throw new Exception('Variable soapClient is not a SoapClient class, have: ' . gettype($this->soapClient), 0xFF);
+		}
+
+		// Is it a "SOAP callback"?
+		if (substr($methodName, 0, 2) == '__') {
+			// Is SoapClient's method
+			$returned = call_user_func_array(array($this->soapClient, $methodName), $methodParams);
+		} else {
+			// Call it
+			$returned = $this->soapClient->__call($methodName, $methodParams);
+		}
+
+		// Return any values
+		return $returned;
+	}
+
 	/**
 	 * Get Lists
 	 * Return an array containing all avaiable lists within a given sharepoint subsite.
@@ -193,7 +220,7 @@ class sharepointAPI{
 	public function getLists () {
 		// Query Sharepoint for full listing of it's lists.
 		try {
-			$rawxml = $this->soapObject->GetListCollection()->GetListCollectionResult->any;
+			$rawxml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -236,7 +263,7 @@ class sharepointAPI{
 		$rawxml ='';
 		// Attempt to query Sharepoint
 		try {
-			$rawxml = $this->soapObject->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
+			$rawxml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -317,7 +344,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to query Sharepoint
 		try {
-			$result = $this->xmlHandler($this->soapObject->GetListItems($xmlvar)->GetListItemsResult->any);
+			$result = $this->xmlHandler($this->soapClient->GetListItems($xmlvar)->GetListItemsResult->any);
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 			$result = null;
@@ -410,7 +437,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to run operation
 		try {
-			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -571,7 +598,7 @@ class sharepointAPI{
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		// Attempt to run operation
 		try {
-			$result = $this->xmlHandler($this->soapObject->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 			$result = null;
@@ -618,7 +645,7 @@ class sharepointAPI{
 	 * @return Object SoapClient
 	 * @depricated (this should no longer be used)
 	 */
-	private function createSoapObject () {
+	private function createsoapClient () {
 			try {
 				return new SoapClient($this->spWsdl, array(
 					'login'=> $this->spUser,
