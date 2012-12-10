@@ -316,7 +316,7 @@ class SharePointAPI {
 			$inner_xml ='';
 
 			// Attempt to hide none useful feilds (disable by setting second param to false)
-			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {
+			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden') == 'TRUE')) {
 				continue;
 			}
 
