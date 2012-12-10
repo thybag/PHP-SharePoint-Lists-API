@@ -58,12 +58,13 @@ class NTLM_SoapClient extends SoapClient {
 		$handle = curl_init();
 
 		// Other options (including URL)
-		curl_setopt($handle, CURLOPT_HEADER        , true);
+		curl_setopt($handle, CURLOPT_HEADER        , false);
 		curl_setopt($handle, CURLOPT_URL           , $url);
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
 		curl_setopt($handle, CURLOPT_CRLF          , false);
 		curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
 		curl_setopt($handle, CURLOPT_VERBOSE       , true);
+		curl_setopt($handle, CURLOPT_FRESH_CONNECT , true);
 
 		// HTTP headers
 		curl_setopt($handle, CURLOPT_USERAGENT     , 'PHP SOAP-NTLM Client/1.0');
