@@ -100,6 +100,16 @@ class sharepointAPI{
 	protected $soap_cache_wsdl = WSDL_CACHE_NONE;
 
 	/**
+	 * Proxy login (default: EMPTY
+	 */
+	protected $proxyLogin = '';
+
+	/**
+	 * Proxy password (default: EMPTY)
+	 */
+	protected $proxyPassword = '';
+
+	/**
 	 * Proxy hostname (default: 'localhost')
 	 */
 	protected $proxyHost = 'localhost';
@@ -108,6 +118,7 @@ class sharepointAPI{
 	 * Proxy port (default: 8080)
 	 */
 	protected $proxyPort = 8080;
+
 	/**
 	 * Constructor
 	 *
@@ -152,8 +163,10 @@ class sharepointAPI{
 				
 				// Use NTLM authentication client
 				$this->soapObject = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
-					'proxy_login'    => $this->spUser,
-					'proxy_password' => $this->spPass,
+					'login'          => $this->spUser,
+					'password'       => $this->spPass,
+					'proxy_login'    => $this->proxyLogin,
+					'proxy_password' => $this->proxyPassword,
 					'proxy_host'     => $this->proxyHost,
 					'proxy_port'     => $this->proxyPort
 				)));

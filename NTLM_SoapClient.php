@@ -10,16 +10,28 @@ class NTLM_SoapClient extends SoapClient {
 	/**
 	 * Overwritren constructor
 	 *
+	 * @param	string	$wsdl		WSDL location
+	 * @param	array	$options	Options being handled over
 	 * @return	void
 	 */
 	public function __construct ($wsdl, array $options = array()) {
-		if (empty($options['proxy_login']) || empty($options['proxy_password'])) {
-			throw new Exception('Login and password required for NTLM authentication!');
+		// Is proxy login (not for your SharePoint server!)
+		if (isset($options['proxy_login'])) {
+			// Login is set, so use it
+			$this->proxy_login = $options['proxy_login'];
+
+			// Is Password set?
+			if (isset($options['proxy_password'])) {
+				// Also, use it
+				$this->proxy_password = $options['proxy_password'];
+			}
 		}
-		$this->proxy_login = $options['proxy_login'];
-		$this->proxy_password = $options['proxy_password'];
+
+		// Set proxy host/port, defaults: localhost:8080
 		$this->proxy_host = (empty($options['proxy_host']) ? 'localhost' : $options['proxy_host']);
 		$this->proxy_port = (empty($options['proxy_port']) ? 8080 : $options['proxy_port']);
+
+		// Call parent constructor
 		parent::__construct($wsdl, $options);
 	}
 
@@ -82,9 +94,15 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 
 		// Proxy auth
-		curl_setopt($handle, CURLOPT_PROXYUSERPWD  , $this->proxy_login . ':' . $this->proxy_password);
-		curl_setopt($handle, CURLOPT_PROXY         , $this->proxy_host . ':' . $this->proxy_port);
-		curl_setopt($handle, CURLOPT_PROXYAUTH     , CURLAUTH_NTLM);
+		if (!empty($this->proxy_login)) {
+			curl_setopt($handle, CURLOPT_PROXYUSERPWD, $this->proxy_login . ':' . $this->proxy_password);
+			curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
+		}
+
+		if ((!empty($this->proxy_host)) && (!empty($this->proxy_port))) {
+			// Set proxy hostname:port
+			curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host . ':' . $this->proxy_port);
+		}
 
 		// Execute the request
 		$response = curl_exec($handle);
@@ -105,7 +123,7 @@ class NTLM_SoapClient extends SoapClient {
 	/**
 	 * Overwritten method in SoapClient::__doRequest to use CURL now
 	 *
-	 * Notice: $version and $one_way are unsupported
+	 * Notice: $one_way is unsupported
 	 */
 	public function __doRequest ($request, $location, $action, $version, $one_way = 0) {
 		//* DEBUG: */ print 'action=' . $action . ',version=' . $version . ',one_way[' . gettype($one_way) . ']=' . intval($one_way) . PHP_EOL;
