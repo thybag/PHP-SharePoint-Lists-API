@@ -75,7 +75,7 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
 		curl_setopt($handle, CURLOPT_CRLF          , false);
 		curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
-		curl_setopt($handle, CURLOPT_VERBOSE       , true);
+		curl_setopt($handle, CURLOPT_VERBOSE       , false);
 		curl_setopt($handle, CURLOPT_FRESH_CONNECT , true);
 
 		// HTTP headers
