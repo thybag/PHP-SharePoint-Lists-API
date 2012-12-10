@@ -24,7 +24,7 @@
  * $sp->read('<list_name>', null, null, null, array('col_name'=>'asc|desc'));
  *
  * Query:
- * $sp->query('<list_name>')->where('type','=','dog')->and_where('age','>','5')->limit(10)->sort('age','ASC')->get();
+ * $sp->query('<list_name>')->where('type','=','dog')->and_where('age','>','5')->limit(10)->sort('age','asc')->get();
  *
  * Write: (insert)
  * $sp->write('<list_name>', array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
@@ -207,7 +207,7 @@ class SharePointAPI {
 			}
 		} catch (SoapFault $fault) {
 			// If we are unable to create a Soap Client display a Fatal error.
-			throw new Exception("Unable to locate WSDL file. faultcode=" . $fault->getCode() . ",faultstring=" . $fault->getMessage());
+			throw new Exception('Unable to locate WSDL file. faultcode=' . $fault->getCode() . ',faultstring=' . $fault->getMessage());
 		}
 	}
 
@@ -251,6 +251,7 @@ class SharePointAPI {
 	 */
 	public function getLists () {
 		// Query Sharepoint for full listing of it's lists.
+		$rawXml = '';
 		try {
 			$rawXml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
 		} catch (SoapFault $fault) {
@@ -298,9 +299,8 @@ class SharePointAPI {
 			</GetList>
 		';
 
-		$rawXml = '';
-
 		// Attempt to query Sharepoint
+		$rawXml = '';
 		try {
 			$rawXml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
 		} catch (SoapFault $fault) {
@@ -313,7 +313,7 @@ class SharePointAPI {
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
 			// Empty inner_xml
-			$inner_xml ='';
+			$inner_xml = '';
 
 			// Attempt to hide none useful feilds (disable by setting second param to false)
 			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden') == 'TRUE')) {
@@ -405,13 +405,13 @@ class SharePointAPI {
 
 		// Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+		$result = null;
 
 		// Attempt to query Sharepoint
 		try {
 			$result = $this->xmlHandler($this->soapClient->GetListItems($xmlvar)->GetListItemsResult->any);
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
-			$result = null;
 		}
 
 		// Return a XML as nice clean Array
@@ -432,8 +432,8 @@ class SharePointAPI {
 	}
 
 	// Alias (Identical to above)
-	public function add ($list_name, $data) {return $this->write($list_name, $data);}
-	public function insert ($list_name, $data) {return $this->write($list_name, $data);}
+	public function add ($list_name, $data) { return $this->write($list_name, $data); }
+	public function insert ($list_name, $data) { return $this->write($list_name, $data); }
 
 	/**
 	 * WriteMultiple
@@ -448,8 +448,8 @@ class SharePointAPI {
 	}
 
 	// Alias (Identical to above)
-	public function addMultiple ($list_name, $items) {return $this->writeMultiple($list_name, $items);}
-	public function insertMultiple ($list_name, $items) {return $this->writeMultiple($list_name, $items);}
+	public function addMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
+	public function insertMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
 
 	/**
 	 * Update
@@ -488,7 +488,7 @@ class SharePointAPI {
 	 */
 	public function delete ($list_name, $ID) {
 		// CAML query (request), add extra Fields as necessary
-		$CAML ='
+		$CAML = '
 		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
 			<listName>' . $list_name . '</listName>
 			<updates>
@@ -501,10 +501,11 @@ class SharePointAPI {
 		</UpdateListItems>';
 
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+		$result = null;
 
 		// Attempt to run operation
 		try {
-			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -607,7 +608,7 @@ class SharePointAPI {
 		// Proccess Object and return a nice clean assoaitive array of the results
 		foreach ($results as $i => $result) {
 			$resultArray[$i] = array();
-			foreach ($result->attributes as $attribute=> $value) {
+			foreach ($result->attributes as $attribute => $value) {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				//  Re-assign all the attributes into an easy to access array
 				$resultArray[$i][str_replace('ows_', '', $idx)] = $result->getAttribute($attribute);
@@ -640,13 +641,14 @@ class SharePointAPI {
 	 * @return XML DATA
 	 */
 	private function whereXML ($q) {
-		$queryString ='';
+		$queryString = '';
 		$counter = 0;
 		foreach ($q as $col => $value) {
 			$counter++;
-			$queryString .= '<Eq><FieldRef Name="'.$col.'" /><Value Type="Text">'.htmlspecialchars($value).'</Value></Eq>';
+			$queryString .= '<Eq><FieldRef Name="' . $col . '" /><Value Type="Text">' . htmlspecialchars($value) . '</Value></Eq>';
+
 			// Add additional "and"s if there are multiple query levels needed.
-			if ($counter>=2) {
+			if ($counter >= 2) {
 				$queryString = '<And>' . $queryString . '</And>';
 			}
 		}
@@ -713,7 +715,7 @@ class SharePointAPI {
 		$commands = $this->prepBatch($items, $method);
 
 		// Wrap in CAML
-		$CAML ='
+		$CAML = '
 		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
 			<listName>' . $list_name . '</listName>
 			<updates>
@@ -724,13 +726,13 @@ class SharePointAPI {
 		</UpdateListItems>';
 
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+		$result = null;
 
 		// Attempt to run operation
 		try {
-			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);	
+			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
-			$result = null;
 		}
 
 		// Return a XML as nice clean Array
@@ -758,7 +760,7 @@ class SharePointAPI {
 			$batch .= '<Method Cmd="' . $method . '" ID="' . $counter . '">';
 
 			// Add required attributes
-			foreach ($data AS $itm => $val) {
+			foreach ($data as $itm => $val) {
 				$val = htmlspecialchars($val);
 				$batch .= '<Field Name="' . $itm . '">' . $val . '</Field>' . PHP_EOL;
 			}
@@ -954,7 +956,7 @@ class SPQueryObj {
 	 * @param $api Reference to SP API
 	 */
 	public function __construct ($list_name, SharePointAPI $api) {
-		$this->table = $list_name;
+		$this->list_name = $list_name;
 		$this->api = $api;
 	}
 
@@ -1042,7 +1044,7 @@ class SPQueryObj {
 	 * @return Array: Sharepoint List Data 
 	 */
 	public function get () {
-		return $this->api->read($this->table, $this->limit, $this, $this->view);
+		return $this->api->read($this->list_name, $this->limit, $this, $this->view);
 	}
 
 	/**
@@ -1058,14 +1060,14 @@ class SPQueryObj {
 	 */
 	private function addQueryLine ($rel, $col, $test, $value) {
 		// Check tests are usable
-		if (!in_array($test, array('!=', '>=', '<=', '<','>', '='))) {
+		if (!in_array($test, array('!=', '>=', '<=', '<', '>', '='))) {
 			throw new Exception('Unreconized query parameter. Please use <,>,=,>=,<= or !=');
 		}
 
 		// Make sure $rel is lower-case
 		$rel = strtolower($rel);
 
-		$test = str_replace(array('!=', '>=', '<=', '<','>', '='), array('Neq', 'Geq', 'Leq', 'Lt', 'Gt', 'Eq'), $test);
+		$test = str_replace(array('!=', '>=', '<=', '<', '>', '='), array('Neq', 'Geq', 'Leq', 'Lt', 'Gt', 'Eq'), $test);
 
 		// Create caml
 		$caml = $this->where_caml;
@@ -1091,17 +1093,17 @@ class SPQueryObj {
 	 * @return CAML Code (XML)
 	 */
 	public function getCAML () {
-		$xml  = $this->where_caml;
-		$sort = $this->sort_caml;
+		// Start with empty string
+		$xml = '';
 
 		// Add where
-		if (!empty($xml)) {
+		if (!empty($this->where_caml)) {
 			$xml = '<Where>' . $this->where_caml . '</Where>';
 		}
 
 		// add sort
-		if (!empty($sort)) {
-			$xml .= $sort;
+		if (!empty($this->sort_caml)) {
+			$xml .= $this->sort_caml;
 		}
 
 		return $xml;
