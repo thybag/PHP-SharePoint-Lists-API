@@ -79,9 +79,9 @@ class sharepointAPI{
 	protected $soap_exceptions = true;
 
 	/**
-	 * Kee-Alive HTTP setting (default: 'Connection: close')
+	 * Kee-Alive HTTP setting (default: false)
 	 */
-	protected $soap_keep_alive = 'Connection: close';
+	protected $soap_keep_alive = false;
 
 	/**
 	 * SOAP version number (default: SOAP_1_1)
