@@ -285,16 +285,16 @@ class SharePointAPI {
 	* Read List MetaData (Column configurtion)
 	* Return a full listing of columns and their configurtion options for a given sharepoint list.
 	*
-	* @param $list Name or GUID of list to return metaData from.
+	* @param $list_name Name or GUID of list to return metaData from.
 	* @param $hideInternal true|false Attempt to hide none useful columns (internal data etc)
 	*
 	* @return Array
 	*/
-	public function readListMeta ($list, $hideInternal = true) {
+	public function readListMeta ($list_name, $hideInternal = true) {
 		// Ready XML
 		$CAML = '
 			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-				<listName>' . $list . '</listName> 
+				<listName>' . $list_name . '</listName> 
 			</GetList>
 		';
 
@@ -351,7 +351,7 @@ class SharePointAPI {
 	 * Read
 	 * Use's raw CAML to query sharepoint data
 	 *
-	 * @param String $list
+	 * @param String $list_name
 	 * @param int $limit
 	 * @param Array $query
 	 * @param String (GUID) $view "View to display results with."
@@ -359,7 +359,7 @@ class SharePointAPI {
 	 *
 	 * @return Array
 	 */
-	public function read ($list, $limit = null, $query = null, $view = null, $sort = null) {
+	public function read ($list_name, $limit = null, $query = null, $view = null, $sort = null) {
 		// Check limit is set
 		if ($limit < 1 || is_null($limit)) {
 			$limit = $this->MAX_ROWS;
@@ -395,7 +395,7 @@ class SharePointAPI {
 		 */
 		$CAML = '
 			<GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-				<listName>' . $list . '</listName>
+				<listName>' . $list_name . '</listName>
 				<rowLimit>' . $limit . '</rowLimit>
 				' . $xml_options . '
 				<queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
@@ -423,74 +423,74 @@ class SharePointAPI {
 	 * Write
 	 * Create new item in a sharepoint list
 	 *
-	 * @param String $list Name of List
+	 * @param String $list_name Name of List
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function write ($list, $data) {
-		return $this->writeMultiple($list, array($data));
+	public function write ($list_name, $data) {
+		return $this->writeMultiple($list_name, array($data));
 	}
 
 	// Alias (Identical to above)
-	public function add ($list, $data) {return $this->write($list, $data);}
-	public function insert ($list, $data) {return $this->write($list, $data);}
+	public function add ($list_name, $data) {return $this->write($list_name, $data);}
+	public function insert ($list_name, $data) {return $this->write($list_name, $data);}
 
 	/**
 	 * WriteMultiple
 	 * Batch create new items in a sharepoint list
 	 *
-	 * @param String $list Name of List
+	 * @param String $list_name Name of List
 	 * @param Array of arrays Assosative array's describing data to store
 	 * @return Array
 	 */
-	public function writeMultiple ($list, $items) {
-		return $this->modifyList($list, $items, 'New');
+	public function writeMultiple ($list_name, $items) {
+		return $this->modifyList($list_name, $items, 'New');
 	}
 
 	// Alias (Identical to above)
-	public function addMultiple ($list, $items) {return $this->writeMultiple($list, $items);}
-	public function insertMultiple ($list, $items) {return $this->writeMultiple($list, $items);}
+	public function addMultiple ($list_name, $items) {return $this->writeMultiple($list_name, $items);}
+	public function insertMultiple ($list_name, $items) {return $this->writeMultiple($list_name, $items);}
 
 	/**
 	 * Update
 	 * Update/Modifiy an existing list item.
 	 *
-	 * @param String $list Name of list
+	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to update
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update ($list, $ID, $data) {
+	public function update ($list_name, $ID, $data) {
 		// Add ID to item
 		$data['ID'] = $ID;
-		return $this->updateMultiple($list, array($data));
+		return $this->updateMultiple($list_name, array($data));
 	}
 
 	/**
 	 * UpdateMultiple
 	 * Batch Update/Modifiy existing list item's.
 	 *
-	 * @param String $list Name of list
+	 * @param String $list_name Name of list
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple ($list, $items) {
-		return $this->modifyList($list, $items, 'Update');
+	public function updateMultiple ($list_name, $items) {
+		return $this->modifyList($list_name, $items, 'Update');
 	}
 
 	/**
 	 * Delete
 	 * Delete an existing list item.
 	 *
-	 * @param String $list Name of list
+	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to delete
 	 * @return Array
 	 */
-	public function delete ($list, $ID) {
+	public function delete ($list_name, $ID) {
 		// CAML query (request), add extra Fields as necessary
 		$CAML ='
 		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-			<listName>' . $list . '</listName>
+			<listName>' . $list_name . '</listName>
 			<updates>
 				<Batch ListVersion="1" OnError="Continue">
 					<Method Cmd="Delete" ID="1">
@@ -557,11 +557,11 @@ class SharePointAPI {
 	 * CRUD
 	 * Create a simple Create, Read, Update, Delete Wrapper around a specific list.
 	 *
-	 * @param $list Name of list to provide CRUD for.
+	 * @param $list_name Name of list to provide CRUD for.
 	 * @return ListCRUD Object
 	 */
-	public function CRUD ($list) {
-		return new ListCRUD($list, $this);
+	public function CRUD ($list_name) {
+		return new ListCRUD($list_name, $this);
 	}
 
 	/**
@@ -610,7 +610,7 @@ class SharePointAPI {
 			foreach ($result->attributes as $attribute=> $value) {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				//  Re-assign all the attributes into an easy to access array
-				$resultArray[$i][str_replace('ows_','',$idx)] = $result->getAttribute($attribute);
+				$resultArray[$i][str_replace('ows_', '', $idx)] = $result->getAttribute($attribute);
 			}
 
 			/*
@@ -655,20 +655,44 @@ class SharePointAPI {
 	}
 
 	/**
+	 * "Getter" for sort ascending (true) or descending (false) from given value
+	 *
+	 * @param	string	$value	Value to be checked
+	 * @return	string	$sort	"true" for ascending, "false" (default) for descending
+	 */
+	public function getSortFromValue ($value) {
+		// Make all lower-case
+		$value = strtolower($value);
+
+		// Default is descending
+		$sort = 'false';
+
+		// Is value set to allow ascending sorting?
+		if ($value == 'asc' || $value == 'true' || $value == 'ascending') {
+			// Sort ascending
+			$sort = 'true';
+		}
+
+		// Return it
+		return $sort;
+	}
+
+	/**
 	 * Sort XML
 	 * Generates XML for sort
 	 *
 	 * @param Array $sort array('<col>' => 'asc | desc')
 	 * @return XML DATA
 	 */
-	private function sortXML ($sort) {
-		if (is_null($sort) || !is_array($sort)) { return ''; }
+	private function sortXML (array $sort) {
+		// On no count, no need to sort
+		if (count($sort) == 0) {
+			return '';
+		}
 
-		$queryString ='';
+		$queryString = '';
 		foreach ($sort as $col => $value) {
-			$s = 'false';
-			if ($value == 'ASC' || $value == 'asc' || $value == 'true' || $value == 'ascending') $s = 'true';
-			$queryString .= '<FieldRef Name="' . $col . '" Ascending="' . $s . '" />';
+			$queryString .= '<FieldRef Name="' . $col . '" Ascending="' . $this->getSortFromValue($value) . '" />';
 		}
 		return '<OrderBy>' . $queryString . '</OrderBy>';
 	}
@@ -679,18 +703,19 @@ class SharePointAPI {
 	 * This method will use prepBatch to generate the batch xml, then call the sharepoint SOAP API with this data
 	 * to apply the changes.
 	 *
-	 * @param $list SharePoint List to update
+	 * @param $list_name SharePoint List to update
 	 * @param $items Arrary of new items or item changesets.
 	 * @param $method New/Update
 	 * @return Array|Object
 	 */
-	public function modifyList ($list, $items, $method) {
+	public function modifyList ($list_name, $items, $method) {
 		// Get batch XML
 		$commands = $this->prepBatch($items, $method);
+
 		// Wrap in CAML
 		$CAML ='
 		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-			<listName>' . $list . '</listName>
+			<listName>' . $list_name . '</listName>
 			<updates>
 				<Batch ListVersion="1" OnError="Continue">
 					' . $commands . '
@@ -793,7 +818,7 @@ class ListCRUD {
 	/**
 	 * Name of list
 	 */
-	private $list = '';
+	private $list_name = '';
 
 	/**
 	 * API instance
@@ -925,11 +950,11 @@ class SPQueryObj {
 	 * Construct
 	 * Setup new query Object
 	 *
-	 * @param $list List to Query
+	 * @param $list_name List to Query
 	 * @param $api Reference to SP API
 	 */
-	public function __construct ($list, SharePointAPI $api) {
-		$this->table = $list;
+	public function __construct ($list_name, SharePointAPI $api) {
+		$this->table = $list_name;
 		$this->api = $api;
 	}
 
@@ -1005,18 +1030,7 @@ class SPQueryObj {
 	 * @return Ref to self
 	 */
 	public function sort ($sort_on, $order = 'desc') {
-		// Make sure $order is always lower-case
-		$order = strtolower($order);
-
-		// Default is sort descending
-		$s = 'false';
-
-		// Shall the list be sorted?
-		if ($order == 'asc' || $order == 'true' || $order == 'ascending') {
-			$s = 'true';
-		}
-
-		$queryString = '<FieldRef Name="'  .$sort_on . '" Ascending="' . $s . '" />';
+		$queryString = '<FieldRef Name="'  .$sort_on . '" Ascending="' . $this->api->getSortFromValue($order) . '" />';
 		$this->sort_caml = '<OrderBy>' . $queryString . '</OrderBy>';
 
 		return $this;
