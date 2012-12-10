@@ -35,9 +35,6 @@ class NTLM_SoapClient extends SoapClient {
 	 * @throws	SoapFault on curl connection error
 	 */
 	protected function callCurl ($url, $data, $action, $version) {
-		// Remove \n,\r as they may cause problems
-		$data = str_replace(chr(10), '', str_replace(chr(13), '', $data));
-
 		// Initialize variable
 		$contentType = '';
 
@@ -61,27 +58,26 @@ class NTLM_SoapClient extends SoapClient {
 		$handle = curl_init();
 
 		// Other options (including URL)
-		curl_setopt($handle, CURLOPT_HEADER        , false);
+		curl_setopt($handle, CURLOPT_HEADER        , true);
 		curl_setopt($handle, CURLOPT_URL           , $url);
 		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
+		curl_setopt($handle, CURLOPT_CRLF          , false);
+		curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
+		curl_setopt($handle, CURLOPT_VERBOSE       , true);
 
 		// HTTP headers
+		curl_setopt($handle, CURLOPT_USERAGENT     , 'PHP SOAP-NTLM Client/1.0');
 		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
-			'User-Agent: PHP SOAP-NTLM Client/1.0',
-			'SOAPAction: ' . $action,
-			/*
-			 * The following content types causes a HTTP error code:
-			 * - text/xml = 400
-			 * - application/xml = 415
-			 * - application/x-www-form-urlencoded = 415
-			 */
+			'SOAPAction: ' . trim($action),
 			'Content-Type: ' . $contentType,
+			'Expect:',
 		));
 
-		// ???
+		// Returns transfer as a string
 		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
 
 		// Set POST data
+		curl_setopt($handle, CURLOPT_POST          , true);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 
 		// Proxy auth
