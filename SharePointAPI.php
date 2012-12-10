@@ -52,7 +52,6 @@
  * $list->read(10);
  * $list->create(array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
  */
-
 class SharePointAPI{
 	/**
 	 * Username for SP auth
@@ -63,6 +62,7 @@ class SharePointAPI{
 	 * Password for SP auth
 	 */
 	private $spPass;
+
 	/**
 	 * Location of WSDL
 	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
@@ -783,8 +783,14 @@ class SharePointAPI{
  * shorter methods.
  */
 class ListCRUD {
-	// Require info
+	/**
+	 * Name of list
+	 */
 	private $list = '';
+
+	/**
+	 * API instance
+	 */
 	private $api = null;
 
 	/**
@@ -796,7 +802,7 @@ class ListCRUD {
 	 */
 	public function __construct ($list_name, SharePointAPI $api) {
 		$this->api = $api;
-		$this->list = $list_name;
+		$this->list_name = $list_name;
 	}
 
 	/**
@@ -807,7 +813,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function create ($data) {
-		return $this->api->write($this->list, $data);
+		return $this->api->write($this->list_name, $data);
 	}
 
 	/**
@@ -818,7 +824,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function createMultiple ($data) {
-		return $this->api->writeMultiple($this->list, $data);
+		return $this->api->writeMultiple($this->list_name, $data);
 	}
 
 	/**
@@ -830,7 +836,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function read ($limit = 0, $query = null) {
-		return $this->api->read($this->list, $limit, $query, $view, $sort);
+		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
 	}
 
 	/**
@@ -842,7 +848,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function update ($item_id, $data) {
-		return $this->api->update($this->list, $item_id, $data);
+		return $this->api->update($this->list_name, $item_id, $data);
 	}
 
 	/**
@@ -853,7 +859,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function updateMultiple ($data) {
-		return $this->api->updateMultiple($this->list, $data);
+		return $this->api->updateMultiple($this->list_name, $data);
 	}
 	
 	/**
@@ -864,7 +870,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function delete ($item_id) {
-		return $this->api->delete($this->list, $item_id);
+		return $this->api->delete($this->list_name, $item_id);
 	}
 
 	/**
@@ -874,7 +880,7 @@ class ListCRUD {
 	 * @return SP List Item
 	 */
 	public function query () {
-		return new SPQueryObj($this->list, $this->api);
+		return new SPQueryObj($this->list_name, $this->api);
 	}
 }
 
@@ -885,14 +891,29 @@ class ListCRUD {
  * Note: Querys are executed strictly from left to right and do not currently support nesting.
  */
 class SPQueryObj {
-	// Internal data
-	private $table;	// Table to query
-	private $api; 	// Ref to API obj
-	private $where_caml = '';// CAML for where query
-	private $sort_caml ='';// CAML for sort
+	/**
+	 * Table to query
+	 */
+	private $table;
+
+	/**
+	 * Ref to API obj
+	 */
+	private $api;
+
+	/**
+	 * CAML for where query
+	 */
+	private $where_caml = '';
+
+	/**
+	 * CAML for sort
+	 */
+	private $sort_caml = '';
+
 	private $limit = null;
 	private $view = null;
-	
+
 	/**
 	 * Construct
 	 * Setup new query Object
@@ -976,9 +997,15 @@ class SPQueryObj {
 	 * @param $order Sort direction
 	 * @return Ref to self
 	 */
-	public function sort ($sort_on, $order = 'DESC') {
+	public function sort ($sort_on, $order = 'desc') {
+		// Make sure $order is always lower-case
+		$order = strtolower($order);
+
+		// Default is sort descending
 		$s = 'false';
-		if ($order == 'ASC' || $order == 'asc' || $order == 'true' || $order == 'ascending') {
+
+		// Shall the list be sorted?
+		if ($order == 'asc' || $order == 'true' || $order == 'ascending') {
 			$s = 'true';
 		}
 
@@ -992,7 +1019,6 @@ class SPQueryObj {
 	 * get
 	 * Runs the specified query and returns a useable result.
 	 * @return Array: Sharepoint List Data 
-	 *
 	 */
 	public function get () {
 		return $this->api->read($this->table, $this->limit, $this, $this->view);
@@ -1002,17 +1028,21 @@ class SPQueryObj {
 	 * addQueryLine
 	 * Generate CAML for where statements
 	 *
-	 * @param $rel Relation AND/OR etc
-	 * @param $col column to test
-	 * @param $test comparsion type (=,!+,<,>)
-	 * @param $value to test with
-	 * @return Ref to self
+	 * @param	$rel	Relation AND/OR etc
+	 * @param	$col	column to test
+	 * @param	$test	comparsion type (=,!+,<,>)
+	 * @param	$value	value to test with
+	 * @return	Ref to self
+	 * @throws	Exception	Thrown if $test is unreconized
 	 */
 	private function addQueryLine ($rel, $col, $test, $value) {
 		// Check tests are usable
 		if (!in_array($test, array('!=', '>=', '<=', '<','>', '='))) {
-			die('Unrecognised query paramiter. Please use <,>,= or !=');
+			throw new Exception('Unreconized query parameter. Please use <,>,=,>=,<= or !=');
 		}
+
+		// Make sure $rel is lower-case
+		$rel = strtolower($rel);
 
 		$test = str_replace(array('!=', '>=', '<=', '<','>', '='), array('Neq', 'Geq', 'Leq', 'Lt', 'Gt', 'Eq'), $test);
 
@@ -1040,8 +1070,8 @@ class SPQueryObj {
 	 * @return CAML Code (XML)
 	 */
 	public function getCAML () {
-		$xml = $this->where_caml;
-		$sort =	$this->sort_caml;
+		$xml  = $this->where_caml;
+		$sort = $this->sort_caml;
 
 		// Add where
 		if (!empty($xml)) {
