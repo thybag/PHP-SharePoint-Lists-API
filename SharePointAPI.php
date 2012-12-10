@@ -52,7 +52,7 @@
  * $list->read(10);
  * $list->create(array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
  */
-class SharePointAPI{
+class SharePointAPI {
 	/**
 	 * Username for SP auth
 	 */
@@ -293,8 +293,8 @@ class SharePointAPI{
 	public function readListMeta ($list, $hideInternal = true) {
 		// Ready XML
 		$CAML = '
-			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
-				<listName>'.$list.'</listName> 
+			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+				<listName>' . $list . '</listName> 
 			</GetList>
 		';
 
@@ -309,14 +309,16 @@ class SharePointAPI{
 
 		// Load XML in to DOM document and grab all Fields
 		$nodes = $this->getArrayFromElementsByTagName($rawXml, 'Field');
-		
+
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
 			// Empty inner_xml
 			$inner_xml ='';
 
 			// Attempt to hide none useful feilds (disable by setting second param to false)
-			if ($hideInternal) if ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {continue;}
+			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden')=='TRUE') {
+				continue;
+			}
 
 			// Get Attributes
 			foreach ($node->attributes as $attribute => $value) {
@@ -331,10 +333,15 @@ class SharePointAPI{
 			$results[$counter]['value'] = $inner_xml;
 
 			// Make object if needed
-			if ($this->returnType === 1) settype($results[$counter], 'object');
+			if ($this->returnType === 1) {
+				settype($results[$counter], 'object');
+			}
 		}
+
 		//  Add error array if stuff goes wrong.
-		if (!isset($results)) $results = array('warning' => 'No data returned.');
+		if (!isset($results)) {
+			$results = array('warning' => 'No data returned.');
+		}
 
 		// Return a XML as nice clean Array or Object
 		return $results;
@@ -365,9 +372,9 @@ class SharePointAPI{
 		// Setup Options
 		if ($query instanceof SPQueryObj) {
 			$xml_query = $query->getCAML();
-		} else{
+		} else {
 			if (!is_null($view)) {
-				$xml_options .= "<viewName>{$view}</viewName>";
+				$xml_options .= '<viewName>' . $view . '</viewName>';
 			}
 			if (!is_null($query)) {
 				$xml_query .= $this->whereXML($query);// Build Query
@@ -379,7 +386,7 @@ class SharePointAPI{
 
 		// If query is required
 		if (!empty($xml_query)) {
-			$xml_options .= "<query><Query>{$xml_query}</Query></query>";
+			$xml_options .= '<query><Query>' . $xml_query . '</Query></query>';
 		}
 
 		/*
@@ -388,12 +395,12 @@ class SharePointAPI{
 		 */
 		$CAML = '
 			<GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-			  <listName>'.$list.'</listName>
-			  <rowLimit>'.$limit.'</rowLimit>
-			   '.$xml_options.'
-			  <queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
-				  <QueryOptions/>
-			  </queryOptions>
+				<listName>' . $list . '</listName>
+				<rowLimit>' . $limit . '</rowLimit>
+				' . $xml_options . '
+				<queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
+					<QueryOptions/>
+				</queryOptions>
 			</GetListItems>';
 
 		// Ready XML
@@ -516,7 +523,7 @@ class SharePointAPI{
 	public function setReturnType ($type) {
 		if (trim(strtolower($type)) == 'object') {
 			$this->returnType = 1;
-		} else{
+		} else {
 			$this->returnType = 0;
 		}
 	}
