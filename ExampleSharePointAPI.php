@@ -2,7 +2,8 @@
 /**
  * An example class to bind to SharePoint server through ntlmaps
  *
- * @author Roland Haeder<roland mxchange org>
+ * @license		MIT license (as same as thybag's)
+ * @author		Roland Haeder<roland mxchange org>
  */
 class ExampleSharePointAPI extends SharePointAPI {
 	/**
