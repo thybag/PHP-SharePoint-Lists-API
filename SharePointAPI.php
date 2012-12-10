@@ -57,7 +57,7 @@ class sharepointAPI{
 
 	private $spUser;
 	private $spPass;
-	private $wsdl;
+	private $spWsdl;
 	private $returnType = 0;
 	private $lower_case_indexs = true;
 
@@ -97,7 +97,7 @@ class sharepointAPI{
 	/**
 	 * Cache behaviour for WSDL content (default: WSDL_CACHE_NONE for better debugging)
 	 */
-	protected $cache_wsdl = WSDL_CACHE_NONE;
+	protected $soap_cache_wsdl = WSDL_CACHE_NONE;
 
 	/**
 	 * Proxy hostname (default: 'localhost')
@@ -123,7 +123,7 @@ class sharepointAPI{
 		// Set data from parameters in this class
 		$this->spUser = $sp_user;
 		$this->spPass = $sp_pass;
-		$this->wsdl = $sp_WSDL;
+		$this->spWsdl = $sp_WSDL;
 		
 		// General options
 		$options = array(
@@ -131,16 +131,16 @@ class sharepointAPI{
 			'exceptions'   => $this->soap_exceptions,
 			'keep_alive'   => $this->soap_keep_alive,
 			'soap_version' => $this->soap_version,
-			'cache_wsdl'   => $this->cache_wsdl,
+			'cache_wsdl'   => $this->soap_cache_wsdl,
 			'compression'  => $this->soap_compression,
 		);
 		
 		// Auto-detect http(s):// URLs
-		if ((substr($this->wsdl, 0, 7) == 'http://') || (substr($this->wsdl, 0, 8) == 'https://')) {
+		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
 			// Add location,uri options and set wsdl=null
-			$options['location'] = $this->wsdl;
-			$options['uri']      = $this->wsdl;
-			$this->wsdl = null;
+			$options['location'] = $this->spWsdl;
+			$options['uri']      = $this->spWsdl;
+			$this->spWsdl = null;
 		}
 		
 		// Create new SOAP Client
@@ -151,7 +151,7 @@ class sharepointAPI{
 				require_once 'NTLM_SoapClient.php';
 				
 				// Use NTLM authentication client
-				$this->soapObject = new NTLM_SoapClient($this->wsdl, array_merge($options, array(
+				$this->soapObject = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
 					'proxy_login'    => $this->spUser,
 					'proxy_password' => $this->spPass,
 					'proxy_host'     => $this->proxyHost,
@@ -159,7 +159,7 @@ class sharepointAPI{
 				)));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapObject = new SoapClient($this->wsdl, array_merge($options, array(
+				$this->soapObject = new SoapClient($this->spWsdl, array_merge($options, array(
 					'login'    => $this->spUser,
 					'password' => $this->spPass
 				)));
@@ -607,7 +607,7 @@ class sharepointAPI{
 	 */
 	private function createSoapObject () {
 			try {
-				return new SoapClient($this->wsdl, array(
+				return new SoapClient($this->spWsdl, array(
 					'login'=> $this->spUser,
 					'password' => $this->spPass
 				));
