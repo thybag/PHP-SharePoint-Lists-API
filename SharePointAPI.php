@@ -53,18 +53,43 @@
  * $list->create(array('<col_name>' => '<col_value>','<col_name_2>' => '<col_value_2>'));
  */
 
-class sharepointAPI{
-
+class SharePointAPI{
+	/**
+	 * Username for SP auth
+	 */
 	private $spUser;
+
+	/**
+	 * Password for SP auth
+	 */
 	private $spPass;
+	/**
+	 * Location of WSDL
+	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
+	 */
 	private $spWsdl;
+
+	/**
+	 * Return type (default: 0)
+	 *
+	 * 0 = Array
+	 * 1 = Object
+	 */
 	private $returnType = 0;
+
+	/**
+	 * Make all indexs lower-case
+	 */
 	private $lower_case_indexs = true;
 
-	// Maximum rows to return from a List 
+	/**
+	 * Maximum rows to return from a List 
+	 */
 	private $MAX_ROWS = 10000;
 
-	// Place holder for soapClient/SOAP client
+	/**
+	 * Place holder for soapClient/SOAP client
+	 */
 	private $soapClient = null;
 
 	/**
@@ -136,7 +161,10 @@ class sharepointAPI{
 		$this->spPass = $sp_pass;
 		$this->spWsdl = $sp_WSDL;
 
-		// General options
+		/*
+		 * General options
+		 * NOTE: You can set all these parameters, see class ExampleSharePointAPI for an example)
+		 */
 		$options = array(
 			'trace'        => $this->soap_trace,
 			'exceptions'   => $this->soap_exceptions,
@@ -224,15 +252,13 @@ class sharepointAPI{
 	public function getLists () {
 		// Query Sharepoint for full listing of it's lists.
 		try {
-			$rawxml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
+			$rawXml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
 
 		// Load XML in to DOM document and grab all list items.
-		$dom = new DOMDocument();
-		$dom->loadXML($rawxml);
-		$nodes = $dom->getElementsByTagName('List');
+		$nodes = $this->getArrayFromElementsTagName($rawXml, 'List');
 
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
@@ -268,20 +294,21 @@ class sharepointAPI{
 		// Ready XML
 		$CAML = '
 			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">  
-			  <listName>'.$list.'</listName> 
+				<listName>'.$list.'</listName> 
 			</GetList>
 		';
-		$rawxml ='';
+
+		$rawXml = '';
+
 		// Attempt to query Sharepoint
 		try {
-			$rawxml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
+			$rawXml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
+
 		// Load XML in to DOM document and grab all Fields
-		$dom = new DOMDocument();
-		$dom->loadXML($rawxml);
-		$nodes = $dom->getElementsByTagName('Field');
+		$nodes = $this->getArrayFromElementsByTagName($rawXml, 'Field');
 		
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
@@ -531,19 +558,43 @@ class sharepointAPI{
 	}
 
 	/**
+	 * "Getter" for an array of nodes from given "raw XML" and tag name
+	 *
+	 * @param	string	$rawXml		"Raw XML" data
+	 * @param	string	$tag		Name of tag
+	 * @param	string	$namespace	Optional namespace
+	 * @return	array	$nodes		An array of XML nodes
+	 */
+	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = null) {
+		// Get DOM instance and load XML
+		$dom = new DOMDocument();
+		$dom->loadXML($rawXml);
+
+		// Is namespace set?
+		if (!is_null($namespace)) {
+			// Use it
+			$nodes = $dom->getElementsByTagNameNS($tag, $namespace);
+		} else {
+			// Get nodes
+			$nodes = $dom->getElementsByTagName($tag);
+		}
+
+		// Return nodes list
+		return $nodes;
+	}
+
+	/**
 	 * xmlHandler
 	 * Transform the XML returned from SOAP in to a useful datastructure.
 	 * By Defualt all sharepoint items will be represented as arrays.
 	 * Use setReturnType('object') to have them returned as objects.
 	 *
-	 * @param $rawXML XML DATA returned by SOAP
+	 * @param $rawXml XML DATA returned by SOAP
 	 * @return Array( Array ) | Array( Object )
 	 */
-	private function xmlHandler ($rawXML) {
+	private function xmlHandler ($rawXml) {
 		// Use DOMDocument to proccess XML
-		$dom = new DOMDocument();
-		$dom->loadXML($rawXML);
-		$results = $dom->getElementsByTagNameNS('#RowsetSchema', '*');
+		$results = $this->getArrayFromElementsByTagName($rawXml, '#RowsetSchema', '*');
 		$resultArray = array();
 
 		// Proccess Object and return a nice clean assoaitive array of the results
