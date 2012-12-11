@@ -873,7 +873,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function create ($data) {
+	public function create (array $data) {
 		return $this->api->write($this->list_name, $data);
 	}
 
@@ -884,7 +884,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function createMultiple ($data) {
+	public function createMultiple (array $data) {
 		return $this->api->writeMultiple($this->list_name, $data);
 	}
 
@@ -908,7 +908,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update ($item_id, $data) {
+	public function update ($item_id, array $data) {
 		return $this->api->update($this->list_name, $item_id, $data);
 	}
 
@@ -919,7 +919,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple ($data) {
+	public function updateMultiple (array $data) {
 		return $this->api->updateMultiple($this->list_name, $data);
 	}
 	
