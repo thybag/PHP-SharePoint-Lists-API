@@ -794,7 +794,7 @@ class SharePointAPI {
 	 * @param $method New/Update
 	 * @return XML
 	 */
-	public function prepBatch ($items, $method) {
+	public function prepBatch (array $items, $method) {
 		// Get var's needed
 		$batch = '';
 		$counter = 1;
