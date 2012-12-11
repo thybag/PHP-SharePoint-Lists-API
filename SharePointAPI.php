@@ -807,8 +807,7 @@ class SharePointAPI {
 
 			// Add required attributes
 			foreach ($data as $itm => $val) {
-				$val = htmlspecialchars($val);
-				$batch .= '<Field Name="' . $itm . '">' . $val . '</Field>' . PHP_EOL;
+				$batch .= '<Field Name="' . $itm . '">' . htmlspecialchars($val) . '</Field>' . PHP_EOL;
 			}
 
 			$batch .= '</Method>';
