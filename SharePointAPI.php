@@ -93,12 +93,6 @@ class SharePointAPI {
 	private $soapClient = null;
 
 	/**
-	 * Field mappings from external->internal, do always use method
-	 * resolveExternalToInternal() instead of getting elements from this array.
-	 */
-	private $fieldMappings = array();
-
-	/**
 	 * Whether requests shall be traced
 	 * (compare: http://de.php.net/manual/en/soapclient.soapclient.php )
 	 */
@@ -477,16 +471,15 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of List
 	 * @param Array $data Assosative array describing data to store
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return Array
 	 */
-	public function write ($list_name, array $data, $useExternalNames = true) {
-		return $this->writeMultiple($list_name, array($data), $useExternalNames);
+	public function write ($list_name, array $data) {
+		return $this->writeMultiple($list_name, array($data));
 	}
 
 	// Alias (Identical to above)
-	public function add ($list_name, array $data, $useExternalNames = true) { return $this->write($list_name, $data, $useExternalNames); }
-	public function insert ($list_name, array $data, $useExternalNames = true) { return $this->write($list_name, $data, $useExternalNames); }
+	public function add ($list_name, array $data) { return $this->write($list_name, $data); }
+	public function insert ($list_name, array $data) { return $this->write($list_name, $data); }
 
 	/**
 	 * WriteMultiple
@@ -494,16 +487,15 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of List
 	 * @param Array of arrays Assosative array's describing data to store
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return Array
 	 */
-	public function writeMultiple ($list_name, array $items, $useExternalNames = true) {
-		return $this->modifyList($list_name, $items, 'New', $useExternalNames, $useExternalNames);
+	public function writeMultiple ($list_name, array $items) {
+		return $this->modifyList($list_name, $items, 'New');
 	}
 
 	// Alias (Identical to above)
-	public function addMultiple ($list_name, array $items, $useExternalNames = true) { return $this->writeMultiple($list_name, $items, $useExternalNames); }
-	public function insertMultiple ($list_name, array $items, $useExternalNames = true) { return $this->writeMultiple($list_name, $items, $useExternalNames); }
+	public function addMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
+	public function insertMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
 
 	/**
 	 * Update
@@ -512,13 +504,12 @@ class SharePointAPI {
 	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to update
 	 * @param Array $data Assosative array of data to change.
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return Array
 	 */
-	public function update ($list_name, $ID, array $data, $useExternalNames = true) {
+	public function update ($list_name, $ID, array $data) {
 		// Add ID to item
 		$data['ID'] = $ID;
-		return $this->updateMultiple($list_name, array($data), $useExternalNames);
+		return $this->updateMultiple($list_name, array($data));
 	}
 
 	/**
@@ -527,11 +518,10 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of list
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return Array
 	 */
-	public function updateMultiple ($list_name, array $items, $useExternalNames = true) {
-		return $this->modifyList($list_name, $items, 'Update', $useExternalNames);
+	public function updateMultiple ($list_name, array $items) {
+		return $this->modifyList($list_name, $items, 'Update');
 	}
 
 	/**
@@ -756,12 +746,11 @@ class SharePointAPI {
 	 * @param $list_name SharePoint List to update
 	 * @param $items Arrary of new items or item changesets.
 	 * @param $method New/Update/Delete
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return Array|Object
 	 */
-	public function modifyList ($list_name, array $items, $method, $useExternalNames = true) {
+	public function modifyList ($list_name, array $items, $method) {
 		// Get batch XML
-		$commands = $this->prepBatch($items, $method, $list_name, $useExternalNames);
+		$commands = $this->prepBatch($items, $method);
 
 		// Wrap in CAML
 		$CAML = '
@@ -795,32 +784,15 @@ class SharePointAPI {
 	 *
 	 * @param $items array of new items/changesets
 	 * @param $method New/Update/Delete
-	 * @param $list_name	Name of list or NULL if not used
-	 * @param $useExternalNames true|false Whether to use external (true; default) or internal (false) names
 	 * @return XML
 	 */
-	public function prepBatch (array $items, $method, $list_name = null, $useExternalNames = true) {
+	public function prepBatch (array $items, $method) {
 		// Check if method is supported
 		assert(in_array($method, array('New', 'Update', 'Delete')));
 
 		// Get var's needed
 		$batch = '';
 		$counter = 1;
-
-		/*
-		 * Default is use external->internal mapping for easier programming, but
-		 * keep this array empty for start.
-		 */
-		$fieldMappings = array();
-
-		// Shall external names be used?
-		if (($useExternalNames === true) && (!is_null($list_name))) {
-			// At least one entry must be there
-			assert(isset($items[0]));
-
-			// Try to solve them
-			$fieldMappings = $this->resolveExternalToInternal($list_name, $items[0]);
-		}
 
 		// Foreach item to be converted in to a SharePoint Soap Command
 		foreach ($items as $data) {
@@ -829,13 +801,8 @@ class SharePointAPI {
 
 			// Add required attributes
 			foreach ($data as $itm => $val) {
-				if ($useExternalNames === true) {
-					// Use external->internal mapping
-					$batch .= '<Field Name="' . $fieldMappings[$itm] . '">' . htmlspecialchars($val) . '</Field>' . PHP_EOL;
-				} else {
-					// Are already internal names
-					$batch .= '<Field Name="' . $itm . '">' . htmlspecialchars($val) . '</Field>' . PHP_EOL;
-				}
+				// Add entry
+				$batch .= '<Field Name="' . $itm . '">' . htmlspecialchars($val) . '</Field>' . PHP_EOL;
 			}
 
 			$batch .= '</Method>';
@@ -861,54 +828,6 @@ class SharePointAPI {
 			$more = 'Detailed: ' . $fault->detail->errorstring;
 		}
 		throw new Exception('Error (' . $fault->faultcode . ') ' . $fault->faultstring . ',more=' . $more);
-	}
-
-	/**
-	 * Resolves external field names to internal, by calling 'GetList'. This
-	 * method will thrown an exception if an unsupported type has been found.
-	 *
-	 * @param	string	$list_name	Name of list
-	 * @param	array	$data		Data with keys to solve
-	 * @return	array	$solved		Array with solved names
-	 * @throws	Exception	If an unsupported type has been found
-	 */
-	private function resolveExternalToInternal ($list_name, array $data) {
-		// Supported types
-		$types = array('Text', 'Note', 'Choice', 'Number');
-
-		// Is the list already cached?
-		if (!isset($this->fieldMappings[$list_name])) {
-			// Get list meta data
-			$metaData = $this->readListMeta($list_name);
-
-			// "Walk" through all keys
-			foreach (array_keys($data) as $key) {
-				// Search for all entries
-				foreach ($metaData as $metaKey => $metaEntry) {
-					// Is the name found?
-					if ($metaEntry['name'] == $key) {
-						// Is the type supported?
-						if (!in_array($metaEntry['type'], $types)) {
-							// Not supported
-							throw new Exception('key=' . $key . ',type=' . $metaEntry['type'] . ',displayname=' . $metaEntry['displayname'] . ',colname=' . $metaData['colname'] . ' is not supported.');
-						}
-
-						// Then cache this entry and stop
-						$this->fieldMappings[$list_name][$key] = $metaEntry['colname'];
-						break;
-					}
-				}
-
-				// Found one?
-				if (!isset($this->fieldMappings[$list_name][$key])) {
-					// Key not found
-					throw new Exception('key=' . $key . ' was not found in meta data table.');
-				}
-			}
-		}
-
-		// Return it
-		return $this->fieldMappings[$list_name];
 	}
 }
 
