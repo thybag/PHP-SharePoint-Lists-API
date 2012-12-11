@@ -662,7 +662,10 @@ class SharePointAPI {
 
 		// Check some values were actually returned
 		if (count($resultArray) == 0) {
-			$resultArray = array('warning' => 'No data returned.');
+			$resultArray = array(
+				'warning' => 'No data returned.',
+				'raw_xml' => $rawXml
+			);
 		}
 
 		return $resultArray;
