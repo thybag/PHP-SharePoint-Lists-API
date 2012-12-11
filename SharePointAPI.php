@@ -243,6 +243,53 @@ class SharePointAPI {
 	}
 
 	/**
+	 * Returns an array of all lists
+	 *
+	 * @param	array	$keys		Keys which shall be included in final JSON output
+	 * @param	array	$params		Only search for lists with given criteria (default: 'hidden' => 'False')
+	 * @param	bool	$isSensetive	Whether to look case-sensetive (default: true)
+	 * @return	array	$newLists	An array with given keys from all lists
+	 */
+	public function getLimitedLists (array $keys, array $params = array('hidden' => 'False'), $isSensetive = true) {
+		// Get the full list back
+		$lists = $this->getLists();
+
+		// Init new list and look for all matching entries
+		$newLists = array();
+		foreach ($lists as $entry) {
+			// Default is found
+			$isFound = true;
+
+			// Search for all criteria
+			foreach ($params as $key => $value) {
+				// Is it found?
+				if ((isset($entry[$key])) && ((($isSensetive === true) && ($value != $entry[$key])) || (strtolower($value) != strtolower($entry[$key])))) {
+					// Is not found
+					$isFound = false;
+					break;
+				}
+			}
+
+			// Add it?
+			if ($isFound === true) {
+				// Generate new entry array
+				$newEntry = array();
+				foreach ($keys as $key) {
+					// Add this key
+					$newEntry[$key] = $entry[$key];
+				}
+
+				// Add this new array
+				$newLists[] = $newEntry;
+				unset($newEntry);
+			}
+		}
+
+		// Return finished array
+		return $newLists;
+	}
+
+	/**
 	 * Get Lists
 	 * Return an array containing all avaiable lists within a given sharepoint subsite.
 	 * Use "set return type" if you wish for this data to be provided as an object.
