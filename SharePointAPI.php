@@ -215,10 +215,10 @@ class SharePointAPI {
 	 * Calls methods on SOAP object
 	 *
 	 * @param	string	$methodName		Name of method to call
-	 * @param	string	$methodParams	Parameters to handle over
+	 * @param	array	$methodParams	Parameters to handle over
 	 * @return	mixed	$returned		Returned values
 	 */
-	public final function __call ($methodName, $methodParams) {
+	public final function __call ($methodName, array $methodParams) {
 		/*
 		 * Is soapClient set? This check may look double here but in later
 		 * developments it might help to trace bugs better and it avoids calls
@@ -473,13 +473,13 @@ class SharePointAPI {
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function write ($list_name, $data) {
+	public function write ($list_name, array $data) {
 		return $this->writeMultiple($list_name, array($data));
 	}
 
 	// Alias (Identical to above)
-	public function add ($list_name, $data) { return $this->write($list_name, $data); }
-	public function insert ($list_name, $data) { return $this->write($list_name, $data); }
+	public function add ($list_name, array $data) { return $this->write($list_name, $data); }
+	public function insert ($list_name, array $data) { return $this->write($list_name, $data); }
 
 	/**
 	 * WriteMultiple
@@ -489,13 +489,13 @@ class SharePointAPI {
 	 * @param Array of arrays Assosative array's describing data to store
 	 * @return Array
 	 */
-	public function writeMultiple ($list_name, $items) {
+	public function writeMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'New');
 	}
 
 	// Alias (Identical to above)
-	public function addMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
-	public function insertMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
+	public function addMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
+	public function insertMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
 
 	/**
 	 * Update
@@ -506,7 +506,7 @@ class SharePointAPI {
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update ($list_name, $ID, $data) {
+	public function update ($list_name, $ID, array $data) {
 		// Add ID to item
 		$data['ID'] = $ID;
 		return $this->updateMultiple($list_name, array($data));
@@ -520,7 +520,7 @@ class SharePointAPI {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple ($list_name, $items) {
+	public function updateMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'Update');
 	}
 
@@ -686,7 +686,7 @@ class SharePointAPI {
 	 * @param Array $q array('<col>' => '<value_to_match_on>')
 	 * @return XML DATA
 	 */
-	private function whereXML ($q) {
+	private function whereXML (array $q) {
 		$queryString = '';
 		$counter = 0;
 		foreach ($q as $col => $value) {
@@ -756,7 +756,7 @@ class SharePointAPI {
 	 * @param $method New/Update
 	 * @return Array|Object
 	 */
-	public function modifyList ($list_name, $items, $method) {
+	public function modifyList ($list_name, array $items, $method) {
 		// Get batch XML
 		$commands = $this->prepBatch($items, $method);
 
