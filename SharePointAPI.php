@@ -533,31 +533,20 @@ class SharePointAPI {
 	 * @return Array
 	 */
 	public function delete ($list_name, $ID) {
-		// CAML query (request), add extra Fields as necessary
-		$CAML = '
-		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-			<listName>' . $list_name . '</listName>
-			<updates>
-				<Batch ListVersion="1" OnError="Continue">
-					<Method Cmd="Delete" ID="1">
-						<Field Name="ID">' . $ID . '</Field>
-					</Method>
-				</Batch>
-			</updates>
-		</UpdateListItems>';
+		return $this->deleteMultiple($list_name, array($ID));
+	}
 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
-
-		// Attempt to run operation
-		try {
-			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
-		} catch (SoapFault $fault) {
-			$this->onError($fault);
-		}
-
+	/**
+	 * DeleteMUlti
+	 * Delete existing multiple list items.
+	 *
+	 * @param String $list_name Name of list
+	 * @param array $IDs IDs of items to delete
+	 * @return Array
+	 */
+	public function deleteMultiple ($list_name, array $IDs) {
 		// Return a XML as nice clean Array
-		return $result;
+		return $this->modifyList($list_name, $IDs, 'Delete');
 	}
 
 	/**
@@ -753,7 +742,7 @@ class SharePointAPI {
 	 *
 	 * @param $list_name SharePoint List to update
 	 * @param $items Arrary of new items or item changesets.
-	 * @param $method New/Update
+	 * @param $method New/Update/Delete
 	 * @return Array|Object
 	 */
 	public function modifyList ($list_name, array $items, $method) {
@@ -791,14 +780,16 @@ class SharePointAPI {
 	 * the sharepoint SOAP API.
 	 *
 	 * @param $items array of new items/changesets
-	 * @param $method New/Update
+	 * @param $method New/Update/Delete
 	 * @return XML
 	 */
 	public function prepBatch (array $items, $method) {
+		// Check if method is supported
+		assert(in_array($method, array('New', 'Update', 'Delete')));
+
 		// Get var's needed
 		$batch = '';
 		$counter = 1;
-		$method = ($method == 'Update') ? 'Update' : 'New';
 
 		// Foreach item to be converted in to a SharePoint Soap Command
 		foreach ($items as $data) {
