@@ -93,16 +93,16 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_POST          , true);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 
-		// Proxy auth
-		if (!empty($this->proxy_login)) {
-			curl_setopt($handle, CURLOPT_PROXYUSERPWD, $this->proxy_login . ':' . $this->proxy_password);
-			curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
-		}
-
 		if ((!empty($this->proxy_host)) && (!empty($this->proxy_port))) {
 			// Set proxy hostname:port
 			curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host . ':' . $this->proxy_port);
 			curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
+
+			// Proxy auth enabled?
+			if (!empty($this->proxy_login)) {
+				curl_setopt($handle, CURLOPT_PROXYUSERPWD, $this->proxy_login . ':' . $this->proxy_password);
+				curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
+			}
 		}
 
 		// Execute the request
