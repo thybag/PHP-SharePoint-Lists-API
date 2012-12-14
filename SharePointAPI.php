@@ -19,9 +19,9 @@
  * Read:
  * $sp->read('<list_name>');
  * $sp->read('<list_name>', 500); // Return 500 records
- * $sp->read('<list_name>', null, array('<col_name>'=>'<col_value>'); //  Filter on col_name = col_value
- * $sp->read('<list_name>', null, null, '{FAKE-GUID00-0000-000}'); 	// Return list items with view (specified via GUID)
- * $sp->read('<list_name>', null, null, null, array('col_name'=>'asc|desc'));
+ * $sp->read('<list_name>', NULL, array('<col_name>'=>'<col_value>'); //  Filter on col_name = col_value
+ * $sp->read('<list_name>', NULL, NULL, '{FAKE-GUID00-0000-000}'); 	// Return list items with view (specified via GUID)
+ * $sp->read('<list_name>', NULL, NULL, NULL, array('col_name'=>'asc|desc'));
  *
  * Query:
  * $sp->query('<list_name>')->where('type','=','dog')->and_where('age','>','5')->limit(10)->sort('age','asc')->get();
@@ -56,18 +56,18 @@ class SharePointAPI {
 	/**
 	 * Username for SP auth
 	 */
-	private $spUser;
+	private $spUser = '';
 
 	/**
 	 * Password for SP auth
 	 */
-	private $spPass;
+	private $spPass = '';
 
 	/**
 	 * Location of WSDL
 	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
 	 */
-	private $spWsdl;
+	private $spWsdl = '';
 
 	/**
 	 * Return type (default: 0)
@@ -80,7 +80,7 @@ class SharePointAPI {
 	/**
 	 * Make all indexs lower-case
 	 */
-	private $lower_case_indexs = true;
+	private $lower_case_indexs = TRUE;
 
 	/**
 	 * Maximum rows to return from a List 
@@ -90,23 +90,23 @@ class SharePointAPI {
 	/**
 	 * Place holder for soapClient/SOAP client
 	 */
-	private $soapClient = null;
+	private $soapClient = NULL;
 
 	/**
 	 * Whether requests shall be traced
 	 * (compare: http://de.php.net/manual/en/soapclient.soapclient.php )
 	 */
-	protected $soap_trace = true;
+	protected $soap_trace = TRUE;
 
 	/**
 	 * Whether SOAP errors throw exception of type SoapFault
 	 */
-	protected $soap_exceptions = true;
+	protected $soap_exceptions = TRUE;
 
 	/**
-	 * Kee-Alive HTTP setting (default: false)
+	 * Kee-Alive HTTP setting (default: FALSE)
 	 */
-	protected $soap_keep_alive = false;
+	protected $soap_keep_alive = FALSE;
 
 	/**
 	 * SOAP version number (default: SOAP_1_1)
@@ -152,7 +152,7 @@ class SharePointAPI {
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
+	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = FALSE) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -176,16 +176,16 @@ class SharePointAPI {
 
 		// Auto-detect http(s):// URLs
 		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
-			// Add location,uri options and set wsdl=null
+			// Add location,uri options and set wsdl=NULL
 			$options['location'] = $this->spWsdl;
 			$options['uri']      = $this->spWsdl;
-			$this->spWsdl = null;
+			$this->spWsdl = NULL;
 		}
 
 		// Create new SOAP Client
 		try {
 			// NTLM authentication or regular SOAP client?
-			if ($useNtlm === true) {
+			if ($useNtlm === TRUE) {
 				// Load include once
 				require_once 'NTLM_SoapClient.php';
 
@@ -215,10 +215,10 @@ class SharePointAPI {
 	 * Calls methods on SOAP object
 	 *
 	 * @param	string	$methodName		Name of method to call
-	 * @param	string	$methodParams	Parameters to handle over
+	 * @param	array	$methodParams	Parameters to handle over
 	 * @return	mixed	$returned		Returned values
 	 */
-	public final function __call ($methodName, $methodParams) {
+	public final function __call ($methodName, array $methodParams) {
 		/*
 		 * Is soapClient set? This check may look double here but in later
 		 * developments it might help to trace bugs better and it avoids calls
@@ -240,6 +240,53 @@ class SharePointAPI {
 
 		// Return any values
 		return $returned;
+	}
+
+	/**
+	 * Returns an array of all lists
+	 *
+	 * @param	array	$keys		Keys which shall be included in final JSON output
+	 * @param	array	$params		Only search for lists with given criteria (default: 'hidden' => 'False')
+	 * @param	bool	$isSensetive	Whether to look case-sensetive (default: TRUE)
+	 * @return	array	$newLists	An array with given keys from all lists
+	 */
+	public function getLimitedLists (array $keys, array $params = array('hidden' => 'False'), $isSensetive = TRUE) {
+		// Get the full list back
+		$lists = $this->getLists();
+
+		// Init new list and look for all matching entries
+		$newLists = array();
+		foreach ($lists as $entry) {
+			// Default is found
+			$isFound = TRUE;
+
+			// Search for all criteria
+			foreach ($params as $key => $value) {
+				// Is it found?
+				if ((isset($entry[$key])) && ((($isSensetive === TRUE) && ($value != $entry[$key])) || (strtolower($value) != strtolower($entry[$key])))) {
+					// Is not found
+					$isFound = FALSE;
+					break;
+				}
+			}
+
+			// Add it?
+			if ($isFound === TRUE) {
+				// Generate new entry array
+				$newEntry = array();
+				foreach ($keys as $key) {
+					// Add this key
+					$newEntry[$key] = $entry[$key];
+				}
+
+				// Add this new array
+				$newLists[] = $newEntry;
+				unset($newEntry);
+			}
+		}
+
+		// Return finished array
+		return $newLists;
 	}
 
 	/**
@@ -287,11 +334,11 @@ class SharePointAPI {
 	* Return a full listing of columns and their configurtion options for a given sharepoint list.
 	*
 	* @param $list_name Name or GUID of list to return metaData from.
-	* @param $hideInternal true|false Attempt to hide none useful columns (internal data etc)
-	*
+	* @param $hideInternal TRUE|FALSE Attempt to hide none useful columns (internal data etc)
+	* @param $ignoreHiddenAttribute TRUE|flase Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
 	* @return Array
 	*/
-	public function readListMeta ($list_name, $hideInternal = true) {
+	public function readListMeta ($list_name, $hideInternal = TRUE, $ignoreHiddenAttribute = FALSE) {
 		// Ready XML
 		$CAML = '
 			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">
@@ -315,8 +362,8 @@ class SharePointAPI {
 			// Empty inner_xml
 			$inner_xml = '';
 
-			// Attempt to hide none useful feilds (disable by setting second param to false)
-			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || $node->getAttribute('Hidden') == 'TRUE')) {
+			// Attempt to hide none useful feilds (disable by setting second param to FALSE)
+			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === FALSE))) {
 				continue;
 			}
 
@@ -359,7 +406,7 @@ class SharePointAPI {
 	 *
 	 * @return Array
 	 */
-	public function read ($list_name, $limit = null, $query = null, $view = null, $sort = null) {
+	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
 		// Check limit is set
 		if ($limit < 1 || is_null($limit)) {
 			$limit = $this->MAX_ROWS;
@@ -405,7 +452,7 @@ class SharePointAPI {
 
 		// Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
+		$result = NULL;
 
 		// Attempt to query Sharepoint
 		try {
@@ -426,13 +473,13 @@ class SharePointAPI {
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function write ($list_name, $data) {
+	public function write ($list_name, array $data) {
 		return $this->writeMultiple($list_name, array($data));
 	}
 
 	// Alias (Identical to above)
-	public function add ($list_name, $data) { return $this->write($list_name, $data); }
-	public function insert ($list_name, $data) { return $this->write($list_name, $data); }
+	public function add ($list_name, array $data) { return $this->write($list_name, $data); }
+	public function insert ($list_name, array $data) { return $this->write($list_name, $data); }
 
 	/**
 	 * WriteMultiple
@@ -442,13 +489,13 @@ class SharePointAPI {
 	 * @param Array of arrays Assosative array's describing data to store
 	 * @return Array
 	 */
-	public function writeMultiple ($list_name, $items) {
+	public function writeMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'New');
 	}
 
 	// Alias (Identical to above)
-	public function addMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
-	public function insertMultiple ($list_name, $items) { return $this->writeMultiple($list_name, $items); }
+	public function addMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
+	public function insertMultiple ($list_name, array $items) { return $this->writeMultiple($list_name, $items); }
 
 	/**
 	 * Update
@@ -459,7 +506,7 @@ class SharePointAPI {
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update ($list_name, $ID, $data) {
+	public function update ($list_name, $ID, array $data) {
 		// Add ID to item
 		$data['ID'] = $ID;
 		return $this->updateMultiple($list_name, array($data));
@@ -473,7 +520,7 @@ class SharePointAPI {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple ($list_name, $items) {
+	public function updateMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'Update');
 	}
 
@@ -486,31 +533,20 @@ class SharePointAPI {
 	 * @return Array
 	 */
 	public function delete ($list_name, $ID) {
-		// CAML query (request), add extra Fields as necessary
-		$CAML = '
-		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-			<listName>' . $list_name . '</listName>
-			<updates>
-				<Batch ListVersion="1" OnError="Continue">
-					<Method Cmd="Delete" ID="1">
-						<Field Name="ID">' . $ID . '</Field>
-					</Method>
-				</Batch>
-			</updates>
-		</UpdateListItems>';
+		return $this->deleteMultiple($list_name, array($ID));
+	}
 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
-
-		// Attempt to run operation
-		try {
-			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
-		} catch (SoapFault $fault) {
-			$this->onError($fault);
-		}
-
+	/**
+	 * DeleteMUlti
+	 * Delete existing multiple list items.
+	 *
+	 * @param String $list_name Name of list
+	 * @param array $IDs IDs of items to delete
+	 * @return Array
+	 */
+	public function deleteMultiple ($list_name, array $IDs) {
 		// Return a XML as nice clean Array
-		return $result;
+		return $this->modifyList($list_name, $IDs, 'Delete');
 	}
 
 	/**
@@ -534,10 +570,10 @@ class SharePointAPI {
 	 * (By defualt this is enabled to avoid users having to worry about the case attributers are in)
 	 * Array or Object.
 	 *
-	 * @param $enable true|false
+	 * @param $enable TRUE|FALSE
 	 */
 	public function lowercaseIndexs ($enable) {
-		$this->lower_case_indexs = ($enable === true);
+		$this->lower_case_indexs = ($enable === TRUE);
 	}
 
 	/**
@@ -572,7 +608,7 @@ class SharePointAPI {
 	 * @param	string	$namespace	Optional namespace
 	 * @return	array	$nodes		An array of XML nodes
 	 */
-	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = null) {
+	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = NULL) {
 		// Get DOM instance and load XML
 		$dom = new DOMDocument();
 		$dom->loadXML($rawXml);
@@ -626,7 +662,10 @@ class SharePointAPI {
 
 		// Check some values were actually returned
 		if (count($resultArray) == 0) {
-			$resultArray = array('warning' => 'No data returned.');
+			$resultArray = array(
+				'warning' => 'No data returned.',
+				'raw_xml' => $rawXml
+			);
 		}
 
 		return $resultArray;
@@ -639,7 +678,7 @@ class SharePointAPI {
 	 * @param Array $q array('<col>' => '<value_to_match_on>')
 	 * @return XML DATA
 	 */
-	private function whereXML ($q) {
+	private function whereXML (array $q) {
 		$queryString = '';
 		$counter = 0;
 		foreach ($q as $col => $value) {
@@ -656,10 +695,10 @@ class SharePointAPI {
 	}
 
 	/**
-	 * "Getter" for sort ascending (true) or descending (false) from given value
+	 * "Getter" for sort ascending (TRUE) or descending (FALSE) from given value
 	 *
 	 * @param	string	$value	Value to be checked
-	 * @return	string	$sort	"true" for ascending, "false" (default) for descending
+	 * @return	string	$sort	"TRUE" for ascending, "false" (default) for descending
 	 */
 	public function getSortFromValue ($value) {
 		// Make all lower-case
@@ -706,10 +745,10 @@ class SharePointAPI {
 	 *
 	 * @param $list_name SharePoint List to update
 	 * @param $items Arrary of new items or item changesets.
-	 * @param $method New/Update
+	 * @param $method New/Update/Delete
 	 * @return Array|Object
 	 */
-	public function modifyList ($list_name, $items, $method) {
+	public function modifyList ($list_name, array $items, $method) {
 		// Get batch XML
 		$commands = $this->prepBatch($items, $method);
 
@@ -725,7 +764,7 @@ class SharePointAPI {
 		</UpdateListItems>';
 
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
+		$result = NULL;
 
 		// Attempt to run operation
 		try {
@@ -744,14 +783,16 @@ class SharePointAPI {
 	 * the sharepoint SOAP API.
 	 *
 	 * @param $items array of new items/changesets
-	 * @param $method New/Update
+	 * @param $method New/Update/Delete
 	 * @return XML
 	 */
-	public function prepBatch ($items, $method) {
+	public function prepBatch (array $items, $method) {
+		// Check if method is supported
+		assert(in_array($method, array('New', 'Update', 'Delete')));
+
 		// Get var's needed
 		$batch = '';
 		$counter = 1;
-		$method = ($method == 'Update') ? 'Update' : 'New';
 
 		// Foreach item to be converted in to a SharePoint Soap Command
 		foreach ($items as $data) {
@@ -760,8 +801,8 @@ class SharePointAPI {
 
 			// Add required attributes
 			foreach ($data as $itm => $val) {
-				$val = htmlspecialchars($val);
-				$batch .= '<Field Name="' . $itm . '">' . $val . '</Field>' . PHP_EOL;
+				// Add entry
+				$batch .= '<Field Name="' . $itm . '">' . htmlspecialchars($val) . '</Field>' . PHP_EOL;
 			}
 
 			$batch .= '</Method>';
@@ -805,7 +846,7 @@ class ListCRUD {
 	/**
 	 * API instance
 	 */
-	private $api = null;
+	private $api = NULL;
 
 	/**
 	 * Construct
@@ -826,7 +867,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array describing data to store
 	 * @return Array
 	 */
-	public function create ($data) {
+	public function create (array $data) {
 		return $this->api->write($this->list_name, $data);
 	}
 
@@ -837,7 +878,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function createMultiple ($data) {
+	public function createMultiple (array $data) {
 		return $this->api->writeMultiple($this->list_name, $data);
 	}
 
@@ -849,7 +890,7 @@ class ListCRUD {
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read ($limit = 0, $query = null) {
+	public function read ($limit = 0, $query = NULL) {
 		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
 	}
 
@@ -861,7 +902,7 @@ class ListCRUD {
 	 * @param Array $data Assosative array of data to change.
 	 * @return Array
 	 */
-	public function update ($item_id, $data) {
+	public function update ($item_id, array $data) {
 		return $this->api->update($this->list_name, $item_id, $data);
 	}
 
@@ -872,7 +913,7 @@ class ListCRUD {
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
 	 * @return Array
 	 */
-	public function updateMultiple ($data) {
+	public function updateMultiple (array $data) {
 		return $this->api->updateMultiple($this->list_name, $data);
 	}
 	
@@ -906,14 +947,14 @@ class ListCRUD {
  */
 class SPQueryObj {
 	/**
-	 * Table to query
+	 * List to query
 	 */
-	private $table;
+	private $list_name = '';
 
 	/**
 	 * Ref to API obj
 	 */
-	private $api;
+	private $api = NULL;
 
 	/**
 	 * CAML for where query
@@ -925,8 +966,15 @@ class SPQueryObj {
 	 */
 	private $sort_caml = '';
 
-	private $limit = null;
-	private $view = null;
+	/**
+	 * Number of items to return
+	 */
+	private $limit = NULL;
+
+	/**
+	 * SharePoint API instance
+	 */
+	private $view = NULL;
 
 	/**
 	 * Construct
@@ -1089,3 +1137,4 @@ class SPQueryObj {
 		return $xml;
 	}
 }
+?>

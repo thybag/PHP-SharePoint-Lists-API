@@ -14,7 +14,7 @@ class ExampleSharePointAPI extends SharePointAPI {
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
+	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = FALSE) {
 		// Set 1.2 version
 		$this->soap_version = SOAP_1_2;
 
@@ -22,7 +22,11 @@ class ExampleSharePointAPI extends SharePointAPI {
 		$this->proxyHost = 'localhost';
 		$this->proxyPort = 5865;
 
-		// Call parent constructor last (!)
-		parent::__construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm);
+		/*
+		 * Call parent constructor, but ignore username/password as the ntlmaps
+		 * proxy doesn't requir authentication data as it is IP-based.
+		 */
+		parent::__construct('', '', $sp_WSDL, $useNtlm);
 	}
 }
+?>
