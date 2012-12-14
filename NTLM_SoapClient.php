@@ -131,3 +131,4 @@ class NTLM_SoapClient extends SoapClient {
 		return $this->callCurl($location, $request, $action, $version);
 	}
 }
+?>

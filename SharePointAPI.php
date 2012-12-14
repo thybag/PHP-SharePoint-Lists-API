@@ -1130,3 +1130,4 @@ class SPQueryObj {
 		return $xml;
 	}
 }
+?>

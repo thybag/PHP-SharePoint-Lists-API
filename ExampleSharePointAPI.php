@@ -26,3 +26,4 @@ class ExampleSharePointAPI extends SharePointAPI {
 		parent::__construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm);
 	}
 }
+?>
