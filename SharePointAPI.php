@@ -19,9 +19,9 @@
  * Read:
  * $sp->read('<list_name>');
  * $sp->read('<list_name>', 500); // Return 500 records
- * $sp->read('<list_name>', null, array('<col_name>'=>'<col_value>'); //  Filter on col_name = col_value
- * $sp->read('<list_name>', null, null, '{FAKE-GUID00-0000-000}'); 	// Return list items with view (specified via GUID)
- * $sp->read('<list_name>', null, null, null, array('col_name'=>'asc|desc'));
+ * $sp->read('<list_name>', NULL, array('<col_name>'=>'<col_value>'); //  Filter on col_name = col_value
+ * $sp->read('<list_name>', NULL, NULL, '{FAKE-GUID00-0000-000}'); 	// Return list items with view (specified via GUID)
+ * $sp->read('<list_name>', NULL, NULL, NULL, array('col_name'=>'asc|desc'));
  *
  * Query:
  * $sp->query('<list_name>')->where('type','=','dog')->and_where('age','>','5')->limit(10)->sort('age','asc')->get();
@@ -56,18 +56,18 @@ class SharePointAPI {
 	/**
 	 * Username for SP auth
 	 */
-	private $spUser;
+	private $spUser = '';
 
 	/**
 	 * Password for SP auth
 	 */
-	private $spPass;
+	private $spPass = '';
 
 	/**
 	 * Location of WSDL
 	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
 	 */
-	private $spWsdl;
+	private $spWsdl = '';
 
 	/**
 	 * Return type (default: 0)
@@ -80,7 +80,7 @@ class SharePointAPI {
 	/**
 	 * Make all indexs lower-case
 	 */
-	private $lower_case_indexs = true;
+	private $lower_case_indexs = TRUE;
 
 	/**
 	 * Maximum rows to return from a List 
@@ -90,23 +90,23 @@ class SharePointAPI {
 	/**
 	 * Place holder for soapClient/SOAP client
 	 */
-	private $soapClient = null;
+	private $soapClient = NULL;
 
 	/**
 	 * Whether requests shall be traced
 	 * (compare: http://de.php.net/manual/en/soapclient.soapclient.php )
 	 */
-	protected $soap_trace = true;
+	protected $soap_trace = TRUE;
 
 	/**
 	 * Whether SOAP errors throw exception of type SoapFault
 	 */
-	protected $soap_exceptions = true;
+	protected $soap_exceptions = TRUE;
 
 	/**
-	 * Kee-Alive HTTP setting (default: false)
+	 * Kee-Alive HTTP setting (default: FALSE)
 	 */
-	protected $soap_keep_alive = false;
+	protected $soap_keep_alive = FALSE;
 
 	/**
 	 * SOAP version number (default: SOAP_1_1)
@@ -152,7 +152,7 @@ class SharePointAPI {
 	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = false) {
+	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = FALSE) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -176,16 +176,16 @@ class SharePointAPI {
 
 		// Auto-detect http(s):// URLs
 		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
-			// Add location,uri options and set wsdl=null
+			// Add location,uri options and set wsdl=NULL
 			$options['location'] = $this->spWsdl;
 			$options['uri']      = $this->spWsdl;
-			$this->spWsdl = null;
+			$this->spWsdl = NULL;
 		}
 
 		// Create new SOAP Client
 		try {
 			// NTLM authentication or regular SOAP client?
-			if ($useNtlm === true) {
+			if ($useNtlm === TRUE) {
 				// Load include once
 				require_once 'NTLM_SoapClient.php';
 
@@ -247,10 +247,10 @@ class SharePointAPI {
 	 *
 	 * @param	array	$keys		Keys which shall be included in final JSON output
 	 * @param	array	$params		Only search for lists with given criteria (default: 'hidden' => 'False')
-	 * @param	bool	$isSensetive	Whether to look case-sensetive (default: true)
+	 * @param	bool	$isSensetive	Whether to look case-sensetive (default: TRUE)
 	 * @return	array	$newLists	An array with given keys from all lists
 	 */
-	public function getLimitedLists (array $keys, array $params = array('hidden' => 'False'), $isSensetive = true) {
+	public function getLimitedLists (array $keys, array $params = array('hidden' => 'False'), $isSensetive = TRUE) {
 		// Get the full list back
 		$lists = $this->getLists();
 
@@ -258,20 +258,20 @@ class SharePointAPI {
 		$newLists = array();
 		foreach ($lists as $entry) {
 			// Default is found
-			$isFound = true;
+			$isFound = TRUE;
 
 			// Search for all criteria
 			foreach ($params as $key => $value) {
 				// Is it found?
-				if ((isset($entry[$key])) && ((($isSensetive === true) && ($value != $entry[$key])) || (strtolower($value) != strtolower($entry[$key])))) {
+				if ((isset($entry[$key])) && ((($isSensetive === TRUE) && ($value != $entry[$key])) || (strtolower($value) != strtolower($entry[$key])))) {
 					// Is not found
-					$isFound = false;
+					$isFound = FALSE;
 					break;
 				}
 			}
 
 			// Add it?
-			if ($isFound === true) {
+			if ($isFound === TRUE) {
 				// Generate new entry array
 				$newEntry = array();
 				foreach ($keys as $key) {
@@ -334,11 +334,11 @@ class SharePointAPI {
 	* Return a full listing of columns and their configurtion options for a given sharepoint list.
 	*
 	* @param $list_name Name or GUID of list to return metaData from.
-	* @param $hideInternal true|false Attempt to hide none useful columns (internal data etc)
-	* @param $ignoreHiddenAttribute true|flase Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
+	* @param $hideInternal TRUE|FALSE Attempt to hide none useful columns (internal data etc)
+	* @param $ignoreHiddenAttribute TRUE|flase Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
 	* @return Array
 	*/
-	public function readListMeta ($list_name, $hideInternal = true, $ignoreHiddenAttribute = false) {
+	public function readListMeta ($list_name, $hideInternal = TRUE, $ignoreHiddenAttribute = FALSE) {
 		// Ready XML
 		$CAML = '
 			<GetList xmlns="http://schemas.microsoft.com/sharepoint/soap/">
@@ -362,8 +362,8 @@ class SharePointAPI {
 			// Empty inner_xml
 			$inner_xml = '';
 
-			// Attempt to hide none useful feilds (disable by setting second param to false)
-			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === false))) {
+			// Attempt to hide none useful feilds (disable by setting second param to FALSE)
+			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === FALSE))) {
 				continue;
 			}
 
@@ -406,7 +406,7 @@ class SharePointAPI {
 	 *
 	 * @return Array
 	 */
-	public function read ($list_name, $limit = null, $query = null, $view = null, $sort = null) {
+	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
 		// Check limit is set
 		if ($limit < 1 || is_null($limit)) {
 			$limit = $this->MAX_ROWS;
@@ -452,7 +452,7 @@ class SharePointAPI {
 
 		// Ready XML
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
+		$result = NULL;
 
 		// Attempt to query Sharepoint
 		try {
@@ -570,10 +570,10 @@ class SharePointAPI {
 	 * (By defualt this is enabled to avoid users having to worry about the case attributers are in)
 	 * Array or Object.
 	 *
-	 * @param $enable true|false
+	 * @param $enable TRUE|FALSE
 	 */
 	public function lowercaseIndexs ($enable) {
-		$this->lower_case_indexs = ($enable === true);
+		$this->lower_case_indexs = ($enable === TRUE);
 	}
 
 	/**
@@ -608,7 +608,7 @@ class SharePointAPI {
 	 * @param	string	$namespace	Optional namespace
 	 * @return	array	$nodes		An array of XML nodes
 	 */
-	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = null) {
+	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = NULL) {
 		// Get DOM instance and load XML
 		$dom = new DOMDocument();
 		$dom->loadXML($rawXml);
@@ -695,10 +695,10 @@ class SharePointAPI {
 	}
 
 	/**
-	 * "Getter" for sort ascending (true) or descending (false) from given value
+	 * "Getter" for sort ascending (TRUE) or descending (FALSE) from given value
 	 *
 	 * @param	string	$value	Value to be checked
-	 * @return	string	$sort	"true" for ascending, "false" (default) for descending
+	 * @return	string	$sort	"TRUE" for ascending, "false" (default) for descending
 	 */
 	public function getSortFromValue ($value) {
 		// Make all lower-case
@@ -764,7 +764,7 @@ class SharePointAPI {
 		</UpdateListItems>';
 
 		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-		$result = null;
+		$result = NULL;
 
 		// Attempt to run operation
 		try {
@@ -846,7 +846,7 @@ class ListCRUD {
 	/**
 	 * API instance
 	 */
-	private $api = null;
+	private $api = NULL;
 
 	/**
 	 * Construct
@@ -890,7 +890,7 @@ class ListCRUD {
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read ($limit = 0, $query = null) {
+	public function read ($limit = 0, $query = NULL) {
 		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
 	}
 
@@ -947,14 +947,14 @@ class ListCRUD {
  */
 class SPQueryObj {
 	/**
-	 * Table to query
+	 * List to query
 	 */
-	private $table;
+	private $list_name = '';
 
 	/**
 	 * Ref to API obj
 	 */
-	private $api;
+	private $api = NULL;
 
 	/**
 	 * CAML for where query
@@ -966,8 +966,15 @@ class SPQueryObj {
 	 */
 	private $sort_caml = '';
 
-	private $limit = null;
-	private $view = null;
+	/**
+	 * Number of items to return
+	 */
+	private $limit = NULL;
+
+	/**
+	 * SharePoint API instance
+	 */
+	private $view = NULL;
 
 	/**
 	 * Construct

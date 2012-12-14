@@ -70,13 +70,13 @@ class NTLM_SoapClient extends SoapClient {
 		$handle = curl_init();
 
 		// Other options (including URL)
-		curl_setopt($handle, CURLOPT_HEADER        , false);
+		curl_setopt($handle, CURLOPT_HEADER        , FALSE);
 		curl_setopt($handle, CURLOPT_URL           , $url);
-		curl_setopt($handle, CURLOPT_FAILONERROR   , true);
-		curl_setopt($handle, CURLOPT_CRLF          , false);
-		curl_setopt($handle, CURLOPT_FOLLOWLOCATION, false);
-		curl_setopt($handle, CURLOPT_VERBOSE       , false);
-		curl_setopt($handle, CURLOPT_FRESH_CONNECT , true);
+		curl_setopt($handle, CURLOPT_FAILONERROR   , TRUE);
+		curl_setopt($handle, CURLOPT_CRLF          , FALSE);
+		curl_setopt($handle, CURLOPT_FOLLOWLOCATION, FALSE);
+		curl_setopt($handle, CURLOPT_VERBOSE       , FALSE);
+		curl_setopt($handle, CURLOPT_FRESH_CONNECT , TRUE);
 
 		// HTTP headers
 		curl_setopt($handle, CURLOPT_USERAGENT     , 'PHP SOAP-NTLM Client/1.0');
@@ -87,10 +87,10 @@ class NTLM_SoapClient extends SoapClient {
 		));
 
 		// Returns transfer as a string
-		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($handle, CURLOPT_RETURNTRANSFER, TRUE);
 
 		// Set POST data
-		curl_setopt($handle, CURLOPT_POST          , true);
+		curl_setopt($handle, CURLOPT_POST          , TRUE);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 
 		if ((!empty($this->proxy_host)) && (!empty($this->proxy_port))) {
@@ -109,7 +109,7 @@ class NTLM_SoapClient extends SoapClient {
 		$response = curl_exec($handle);
 
 		// Is the response empty?
-		if ($response === false) {
+		if ($response === FALSE) {
 			// Throw exception
 			throw new SoapFault('CURL error: ' . curl_error($handle), curl_errno($handle));
 		}
