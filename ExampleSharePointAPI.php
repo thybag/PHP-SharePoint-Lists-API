@@ -22,8 +22,11 @@ class ExampleSharePointAPI extends SharePointAPI {
 		$this->proxyHost = 'localhost';
 		$this->proxyPort = 5865;
 
-		// Call parent constructor last (!)
-		parent::__construct($sp_user, $sp_pass, $sp_WSDL, $useNtlm);
+		/*
+		 * Call parent constructor, but ignore username/password as the ntlmaps
+		 * proxy doesn't requir authentication data as it is IP-based.
+		 */
+		parent::__construct('', '', $sp_WSDL, $useNtlm);
 	}
 }
 ?>
