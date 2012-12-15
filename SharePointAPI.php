@@ -545,8 +545,13 @@ class SharePointAPI {
 	 * @return Array
 	 */
 	public function deleteMultiple ($list_name, array $IDs) {
+		//change input "array(ID1,ID2,ID3)"" to "array(array('id'=>ID1),array('id'=>ID2),array('id'=>ID3))"
+		//In order to be compatable with modifyList
+		$ID_list = array();
+		foreach($IDs as $ID)$ID_list[] = array('ID'=>$ID);
+
 		// Return a XML as nice clean Array
-		return $this->modifyList($list_name, $IDs, 'Delete');
+		return $this->modifyList($list_name, $ID_list, 'Delete');
 	}
 
 	/**
