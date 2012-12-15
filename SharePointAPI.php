@@ -834,6 +834,19 @@ class SharePointAPI {
 		}
 		throw new Exception('Error (' . $fault->faultcode . ') ' . $fault->faultstring . ',more=' . $more);
 	}
+
+	
+	/**
+	 * dateTime: Helper method
+	 * Format date for use by sharepoint
+	 * @param $date (Date to be handled by strtotime) 
+	 * @param $timestamp. If first parameter is unix timestamp, set this to true
+	 *
+	 *@return date sharepoint will accept
+	 */
+	public static function dateTime($date, $timestamp = false){
+		return ($timestamp) ? date('c',$date) : date('c', strtotime($date));
+	}
 }
 
 /**
@@ -942,6 +955,7 @@ class ListCRUD {
 	public function query () {
 		return new SPQueryObj($this->list_name, $this->api);
 	}
+
 }
 
 /**
