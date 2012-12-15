@@ -834,6 +834,61 @@ class SharePointAPI {
 		}
 		throw new Exception('Error (' . $fault->faultcode . ') ' . $fault->faultstring . ',more=' . $more);
 	}
+
+	/**
+	 * magicLookup: Helper method
+	 * 
+	 * If you know the name of the item you wish to link to in the lookup field, this helper method
+	 * can be used to perform the lookup for you.
+	 *
+	 * @param $sp Active/current instance of sharepointAPI
+	 * @param $name Name of item you wish lookup to reference
+	 * @param $list Name of list item lookup is linked to.
+	 *
+	 * @return "lookup" value sharepoint will accept
+	 */
+	public function magicLookup($name, $list){
+		//Perform lookup for specified item on specified list
+		$find = $this->read($list,null,array('Title'=>$name));
+		//If we get a result (and there is only one of them) return it in "Lookup" format
+		if(isset($find[0]) && count($find) === 1){
+			settype($find[0], 'array');//Set type to array in case API is in object mode.
+			if($this->lower_case_indexs){
+				return static::lookup($find[0]['id'], $find[0]['title']);
+			}else{
+				return static::lookup($find[0]['ID'], $find[0]['Title']);
+			}
+		}else{
+			//If we didnt find anything / got to many, throw exception
+			throw new Exception("Unable to perform automated lookup for value in {$list}.");
+		}
+	}
+
+	/**
+	 * dateTime: Helper method
+	 * Format date for use by sharepoint
+	 * @param $date (Date to be handled by strtotime) 
+	 * @param $timestamp. If first parameter is unix timestamp, set this to true
+	 *
+	 *@return date sharepoint will accept
+	 */
+	public static function dateTime($date, $timestamp = false){
+		return ($timestamp) ? date('c',$date) : date('c', strtotime($date));
+	}
+
+	/**
+	 * lookup: Helper method
+	 * Format data to be used in lookup datatype
+	 * @param $id ID of item in other table
+	 * @param $title Title of item in other table (this is optional as sharepoint doesnt complain if its not provided)
+	 *
+	 * @return "lookup" value sharepoint will accept
+	 */
+	public static function lookup($id, $title = ''){
+		return $id.(($title!=='')?";#{$title}":'');
+	}
+
+
 }
 
 /**
@@ -942,6 +997,7 @@ class ListCRUD {
 	public function query () {
 		return new SPQueryObj($this->list_name, $this->api);
 	}
+
 }
 
 /**
