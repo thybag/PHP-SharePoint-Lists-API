@@ -56,12 +56,12 @@ class SharePointAPI {
 	/**
 	 * Username for SP auth
 	 */
-	private $spUser = '';
+	private $spUsername = '';
 
 	/**
 	 * Password for SP auth
 	 */
-	private $spPass = '';
+	private $spPassword = '';
 
 	/**
 	 * Location of WSDL
@@ -125,6 +125,11 @@ class SharePointAPI {
 	protected $soap_cache_wsdl = WSDL_CACHE_NONE;
 
 	/**
+	 * Internal (!) encoding (not SOAP; default: UTF-8)
+	 */
+	protected $internal_encoding = 'UTF-8';
+
+	/**
 	 * Proxy login (default: EMPTY
 	 */
 	protected $proxyLogin = '';
@@ -147,19 +152,19 @@ class SharePointAPI {
 	/**
 	 * Constructor
 	 *
-	 * @param User account to authenticate with. (Must have read/write/edit permissions to given Lists)
-	 * @param Password to use with authenticating account.
-	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
+	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
+	 * @param string $spPassword Password to use with authenticating account.
+	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = FALSE) {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $useNtlm = FALSE) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
 		// Set data from parameters in this class
-		$this->spUser = $sp_user;
-		$this->spPass = $sp_pass;
-		$this->spWsdl = $sp_WSDL;
+		$this->spUsername = $spUsername;
+		$this->spPassword = $spPassword;
+		$this->spWsdl     = $spWsdl;
 
 		/*
 		 * General options
@@ -172,6 +177,7 @@ class SharePointAPI {
 			'soap_version' => $this->soap_version,
 			'cache_wsdl'   => $this->soap_cache_wsdl,
 			'compression'  => $this->soap_compression,
+			'encoding'     => $this->internal_encoding,
 		);
 
 		// Auto-detect http(s):// URLs
@@ -184,10 +190,10 @@ class SharePointAPI {
 		}
 
 		// Is login set?
-		if (!empty($this->spUser)) {
+		if (!empty($this->spUsername)) {
 			// Then set login data
-			$options['login']    = $this->spUser;
-			$options['password'] = $this->spPass;
+			$options['login']    = $this->spUsername;
+			$options['password'] = $this->spPassword;
 		}
 
 		// Create new SOAP Client
@@ -689,6 +695,7 @@ class SharePointAPI {
 	private function whereXML (array $q) {
 		$queryString = '';
 		$counter = 0;
+
 		foreach ($q as $col => $value) {
 			$counter++;
 			$queryString .= '<Eq><FieldRef Name="' . $col . '" /><Value Type="Text">' . htmlspecialchars($value) . '</Value></Eq>';
