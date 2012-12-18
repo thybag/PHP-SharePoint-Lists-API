@@ -177,9 +177,17 @@ class SharePointAPI {
 		// Auto-detect http(s):// URLs
 		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
 			// Add location,uri options and set wsdl=NULL
+			// @TODO Is location/uri the same???
 			$options['location'] = $this->spWsdl;
 			$options['uri']      = $this->spWsdl;
 			$this->spWsdl = NULL;
+		}
+
+		// Is login set?
+		if (!empty($this->spUser)) {
+			// Then set login data
+			$options['login']    = $this->spUser;
+			$options['password'] = $this->spPass;
 		}
 
 		// Create new SOAP Client
@@ -191,8 +199,6 @@ class SharePointAPI {
 
 				// Use NTLM authentication client
 				$this->soapClient = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
-					'login'          => $this->spUser,
-					'password'       => $this->spPass,
 					'proxy_login'    => $this->proxyLogin,
 					'proxy_password' => $this->proxyPassword,
 					'proxy_host'     => $this->proxyHost,
@@ -200,10 +206,7 @@ class SharePointAPI {
 				)));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapClient = new SoapClient($this->spWsdl, array_merge($options, array(
-					'login'    => $this->spUser,
-					'password' => $this->spPass
-				)));
+				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
 		} catch (SoapFault $fault) {
 			// If we are unable to create a Soap Client display a Fatal error.
