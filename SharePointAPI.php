@@ -344,7 +344,7 @@ class SharePointAPI {
 	*
 	* @param $list_name Name or GUID of list to return metaData from.
 	* @param $hideInternal TRUE|FALSE Attempt to hide none useful columns (internal data etc)
-	* @param $ignoreHiddenAttribute TRUE|flase Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
+	* @param $ignoreHiddenAttribute TRUE|FALSE Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
 	* @return Array
 	*/
 	public function readListMeta ($list_name, $hideInternal = TRUE, $ignoreHiddenAttribute = FALSE) {
