@@ -392,6 +392,12 @@ class SharePointAPI {
 			if ($this->returnType === 1) {
 				settype($results[$counter], 'object');
 			}
+
+			// If hiding internal is enabled and 'id' is not set, remove this element
+			if ($hideInternal && !isset($results[$counter]['id'])) {
+				// Then it has to be an "internal"
+				unset($results[$counter]);
+			}
 		}
 
 		//  Add error array if stuff goes wrong.
