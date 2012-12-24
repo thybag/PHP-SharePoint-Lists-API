@@ -175,7 +175,8 @@ class SharePointAPI {
 		);
 
 		// Auto-detect http(s):// URLs
-		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
+		// If using NTLM, switch to non-wsdl mode (as http wsdls cannot be used). Do nothing if ntlm is not being used.
+		if ($useNtlm && ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://'))) {
 			// Add location,uri options and set wsdl=NULL
 			$options['location'] = $this->spWsdl;
 			$options['uri']      = $this->spWsdl;
