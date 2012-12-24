@@ -13,8 +13,17 @@ Tested on SharePoint 2007.
 Download the WSDL file for the Lists that you want to interact with, this can normally be obtained at:
     sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL
 
-Include the SharePointAPI in to your project and create a new instance of it.
-The script requires a user account with access to the list in order to function.
+If you are using composer, just add thybag/php-sharepoint-lists-api to your composer.json and run install.
+
+    {
+        "require": {
+            "thybag/php-sharepoint-lists-api": "dev-master"
+        }
+    }
+
+If your not using composer, you can simply download a copy of the SharePointAPI files manually and include the SharePointAPI.php in to your project.
+
+The script requires a user account with access to the list in order to function, which it will authenticate with using basic auth.
 
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
 
@@ -93,9 +102,13 @@ When using updateMultiple every item MUST have an ID.
 
 #### Deleting Rows
 
-To remove rows an ID is also required, to remove the record for James with the ID 5 you would use:
+In order to delete a rowq, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
 
     $sp->delete('<list_name>', '5');
+
+If you wished to delete a number of records at once, an array of ID's can also be passed to the delete multiple method
+
+    $sp->deleteMultiple('<list_name>', array('6','7','8'));
 
 #### CRUD - Create, Read, Update and Delete
 The above actions can also be performed using the CRUD wrapper on a list. This may be useful when you
@@ -122,6 +135,39 @@ By default the method will attempt to strip out non-useful columns from the resu
 You can also now ignore "hidden" colums:
 
     $sp->readListMeta('My List', FALSE, TRUE);
+
+
+### Helper methods
+
+The PHP SharePoint API contains a number of helper methods to make it easier to ensure certain values are in the correct format for some of SharePoints special data types.
+
+#### dateTime
+
+The dataTime method can either be passed a text based date
+
+     $date = SharePointAPI::dateTime("2012-12-21");
+
+Or a unix timestamp
+
+    $date = SharePointAPI::dateTime(time(), true);
+
+And will return a value which can be stored in to SharePoints DateTime fields without issue.
+
+#### Lookup
+
+The lookup data type in SharePoint is for fields that reference a row in another list. In order to correctly populate these values you will need to know the ID of the row the value needs to reference.
+
+    $value = SharePointAPI::lookup('3','Pepperoni Pizza');
+
+If you do not know the name/title of the value you are storing the method will work fine with just an ID (which sharepoint will also accept directly)
+    
+    $value = SharePointAPI::lookup('3');
+
+#### Magic Lookup
+
+If you are attempting to store a value in a "lookup" data type but for some reason only know the title/name of the item, not its ID, you can use the MagicLookup method to quickly look this value up and return it for you. This method will need to be passed both the items title & the list it is contained within.
+
+    $sp->magicLookup("Pepperoni Pizza", "Pizza List");
 
 ## Trouble shooting
 
