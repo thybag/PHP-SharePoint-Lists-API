@@ -1,4 +1,4 @@
-# PHP SharePoint Lists API#
+# PHP SharePoint Lists API
 
 The *PHP SharePoint Lists API* is designed to make working with SharePoint Lists easier and less error prone. With it, you no longer need to worry about SOAP and can just get with doing what you actually need to do. This library is free for anyone to use and is licensed under the MIT license.
 
@@ -18,7 +18,6 @@ The script requires a user account with access to the list in order to function.
 
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
 
-
 #### Reading from a List.
 
 To return all items from a list use:
@@ -31,28 +30,28 @@ To return only the first 10 items from a list use:
 
 To return all the items from a list where surname is smith use:
 
-    $sp->read('<list_name>', null, array('surname'=>'smith')); 
+    $sp->read('<list_name>', NULL, array('surname'=>'smith')); 
 
 To return the first 5 items where the surname is smith and the age is 40
 
     $sp->read('<list_name>', 5, array('surname'=>'smith','age'=>40)); 
-	
+
 To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
 
     $sp->read('<list_name>', 10, array('surname'=>'smith','age'=>40),'{0FAKE-GUID001-1001001-10001}'); 
-	
+
 To return the first 10 items where the surname is smith, ordered by age use:
 
-    $sp->read('<list_name>', 10, array('surname'=>'smith'), null, array('age' => 'desc')); 
-	
+    $sp->read('<list_name>', 10, array('surname'=>'smith'), NULL, array('age' => 'desc')); 
+
 By default list item's are returned as arrays with lower case index's. If you would prefer the results to return as object's, before invoking any read operations use:
 
-	$sp->setReturnType('object'); 
-	
+    $sp->setReturnType('object'); 
+
 Automatically making the attribute names lowercase can also be deactivated by using:
 
-	$sp->lowercaseIndexs(false);
-	
+    $sp->lowercaseIndexs(FALSE);
+
 #### Querying a list
 The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) Pseudo SQL methods.
 
@@ -97,26 +96,36 @@ When using updateMultiple every item MUST have an ID.
 To remove rows an ID is also required, to remove the record for James with the ID 5 you would use:
 
     $sp->delete('<list_name>', '5');
-	
+
 #### CRUD - Create, Read, Update and Delete
 The above actions can also be performed using the CRUD wrapper on a list. This may be useful when you
 want to perform multiple actions on the same list. Crud methods do not require a list name to be passed in.
 
-	$list = $sp->CRUD('<list_name>');
-	$list->read(10);
-	$list->create(array( 'id'=>1, 'name'=>'Fred' ));
-	
-	
+    $list = $sp->CRUD('<list_name>');
+    $list->read(10);
+    $list->create(array( 'id'=>1, 'name'=>'Fred' ));
+
 #### List all Lists.
 You can get a full listing of all avaiable lists within the connected sharepoint subsite by calling:
 
-	$sp->getLists();
-	
+    $sp->getLists();
+
 #### List metaData.
 You can access a lists meta data (Column configurtion for example) by calling
 
-	$sp->readListMeta('My List');
-	
-By default the method will attempt to strip out non-useful columns from the results. If you'd like the full results to be returned call:
+    $sp->readListMeta('My List');
 
-	$sp->readListMeta('My List',false);
+By default the method will attempt to strip out non-useful columns from the results, but keep "hidden". If you'd like the full results to be returned call:
+
+    $sp->readListMeta('My List',FALSE);
+
+You can also now ignore "hidden" colums:
+
+    $sp->readListMeta('My List', FALSE, TRUE);
+
+## Trouble shooting
+
+* Unable to find the wrapper "https"
+
+If you are getting this error it normally means that php_openssl (needed to curl https urls) is not enabled on your webserver. With many local websevers (such as XAMPP) you can simply open your php.ini file and uncomment the php_openssl line (ie. remove the ; before it).
+
