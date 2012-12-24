@@ -10,5 +10,8 @@
             "name": "Carl Saggs",
             "email": "carl@userbag.co.uk"
         }
-    ]
+    ],
+     "autoload": {
+        "classmap": ["SharePointAPI.php"]
+    }
 }
