@@ -5,7 +5,7 @@
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  * 
  * @author Carl Saggs
- * @version 2012.09.02
+ * @version 2012.12.24
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -527,6 +527,8 @@ class SharePointAPI {
 		$data['ID'] = $ID;
 		return $this->updateMultiple($list_name, array($data));
 	}
+	// aliases
+	public function edit($list_name, $ID, array $data) { return $this->update ($list_name, $ID, $data); }
 
 	/**
 	 * UpdateMultiple
@@ -539,6 +541,8 @@ class SharePointAPI {
 	public function updateMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'Update');
 	}
+	// aliases
+	public function editMultiple($list_name, array $items) { return $this->updateMultiple ($list_name, $items); }
 
 	/**
 	 * Delete
