@@ -56,12 +56,12 @@ class SharePointAPI {
 	/**
 	 * Username for SP auth
 	 */
-	private $spUser = '';
+	private $spUsername = '';
 
 	/**
 	 * Password for SP auth
 	 */
-	private $spPass = '';
+	private $spPassword = '';
 
 	/**
 	 * Location of WSDL
@@ -125,6 +125,11 @@ class SharePointAPI {
 	protected $soap_cache_wsdl = WSDL_CACHE_NONE;
 
 	/**
+	 * Internal (!) encoding (not SOAP; default: UTF-8)
+	 */
+	protected $internal_encoding = 'UTF-8';
+
+	/**
 	 * Proxy login (default: EMPTY
 	 */
 	protected $proxyLogin = '';
@@ -147,19 +152,19 @@ class SharePointAPI {
 	/**
 	 * Constructor
 	 *
-	 * @param User account to authenticate with. (Must have read/write/edit permissions to given Lists)
-	 * @param Password to use with authenticating account.
-	 * @param WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
+	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
+	 * @param string $spPassword Password to use with authenticating account.
+	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($sp_user, $sp_pass, $sp_WSDL, $useNtlm = FALSE) {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $useNtlm = FALSE) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
 		// Set data from parameters in this class
-		$this->spUser = $sp_user;
-		$this->spPass = $sp_pass;
-		$this->spWsdl = $sp_WSDL;
+		$this->spUsername = $spUsername;
+		$this->spPassword = $spPassword;
+		$this->spWsdl     = $spWsdl;
 
 		/*
 		 * General options
@@ -172,14 +177,23 @@ class SharePointAPI {
 			'soap_version' => $this->soap_version,
 			'cache_wsdl'   => $this->soap_cache_wsdl,
 			'compression'  => $this->soap_compression,
+			'encoding'     => $this->internal_encoding,
 		);
 
 		// Auto-detect http(s):// URLs
 		if ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://')) {
 			// Add location,uri options and set wsdl=NULL
+			// @TODO Is location/uri the same???
 			$options['location'] = $this->spWsdl;
 			$options['uri']      = $this->spWsdl;
 			$this->spWsdl = NULL;
+		}
+
+		// Is login set?
+		if (!empty($this->spUsername)) {
+			// Then set login data
+			$options['login']    = $this->spUsername;
+			$options['password'] = $this->spPassword;
 		}
 
 		// Create new SOAP Client
@@ -191,8 +205,6 @@ class SharePointAPI {
 
 				// Use NTLM authentication client
 				$this->soapClient = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
-					'login'          => $this->spUser,
-					'password'       => $this->spPass,
 					'proxy_login'    => $this->proxyLogin,
 					'proxy_password' => $this->proxyPassword,
 					'proxy_host'     => $this->proxyHost,
@@ -200,10 +212,7 @@ class SharePointAPI {
 				)));
 			} else {
 				// Use regular client (for basic/digest auth)
-				$this->soapClient = new SoapClient($this->spWsdl, array_merge($options, array(
-					'login'    => $this->spUser,
-					'password' => $this->spPass
-				)));
+				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
 		} catch (SoapFault $fault) {
 			// If we are unable to create a Soap Client display a Fatal error.
@@ -335,7 +344,7 @@ class SharePointAPI {
 	*
 	* @param $list_name Name or GUID of list to return metaData from.
 	* @param $hideInternal TRUE|FALSE Attempt to hide none useful columns (internal data etc)
-	* @param $ignoreHiddenAttribute TRUE|flase Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
+	* @param $ignoreHiddenAttribute TRUE|FALSE Ignores 'Hidden' attribute if it is set to 'TRUE' - DEBUG ONLY!!!
 	* @return Array
 	*/
 	public function readListMeta ($list_name, $hideInternal = TRUE, $ignoreHiddenAttribute = FALSE) {
@@ -382,6 +391,12 @@ class SharePointAPI {
 			// Make object if needed
 			if ($this->returnType === 1) {
 				settype($results[$counter], 'object');
+			}
+
+			// If hiding internal is enabled and 'id' is not set, remove this element
+			if ($hideInternal && !isset($results[$counter]['id'])) {
+				// Then it has to be an "internal"
+				unset($results[$counter]);
 			}
 		}
 
@@ -545,10 +560,15 @@ class SharePointAPI {
 	 * @return Array
 	 */
 	public function deleteMultiple ($list_name, array $IDs) {
-		//change input "array(ID1,ID2,ID3)"" to "array(array('id'=>ID1),array('id'=>ID2),array('id'=>ID3))"
-		//In order to be compatable with modifyList
+		/*
+		 * change input "array(ID1, ID2, ID3)" to "array(array('id' => ID1),
+		 * array('id' => ID2), array('id' => ID3))" in order to be compatible
+		 * with modifyList.
+		 */
 		$ID_list = array();
-		foreach($IDs as $ID)$ID_list[] = array('ID'=>$ID);
+		foreach ($IDs as $ID) {
+			$ID_list[] = array('ID' => $ID);
+		}
 
 		// Return a XML as nice clean Array
 		return $this->modifyList($list_name, $ID_list, 'Delete');
@@ -686,6 +706,7 @@ class SharePointAPI {
 	private function whereXML (array $q) {
 		$queryString = '';
 		$counter = 0;
+
 		foreach ($q as $col => $value) {
 			$counter++;
 			$queryString .= '<Eq><FieldRef Name="' . $col . '" /><Value Type="Text">' . htmlspecialchars($value) . '</Value></Eq>';
