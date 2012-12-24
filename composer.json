@@ -11,7 +11,7 @@
             "email": "carl@userbag.co.uk"
         }
     ],
-     "autoload": {
-        "classmap": ["SharePointAPI.php"]
+    "autoload": {
+        "classmap": ["SharePointAPI.php", "NTLM_SoapClient.php"]
     }
 }
