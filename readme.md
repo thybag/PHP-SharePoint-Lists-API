@@ -1,4 +1,4 @@
-# PHP SharePoint Lists API#
+# PHP SharePoint Lists API
 
 The *PHP SharePoint Lists API* is designed to make working with SharePoint Lists easier and less error prone. With it, you no longer need to worry about SOAP and can just get with doing what you actually need to do. This library is free for anyone to use and is licensed under the MIT license.
 
@@ -121,4 +121,11 @@ By default the method will attempt to strip out non-useful columns from the resu
 
 You can also now ignore "hidden" colums:
 
-    $sp->readListMeta('My List',FALSE, TRUE);
+    $sp->readListMeta('My List', FALSE, TRUE);
+
+## Trouble shooting
+
+* Unable to find the wrapper "https"
+
+If you are getting this error it normally means that php_openssl (needed to curl https urls) is not enabled on your webserver. With many local websevers (such as XAMPP) you can simply open your php.ini file and uncomment the php_openssl line (ie. remove the ; before it).
+
