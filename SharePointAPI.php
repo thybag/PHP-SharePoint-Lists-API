@@ -579,6 +579,63 @@ class SharePointAPI {
 		return $this->modifyList($list_name, $ID_list, 'Delete');
 	}
 
+	public function addAttachment ($list_name, $list_item_id, $file_name) {
+		// base64 encode file
+		$attachment = base64_encode(file_get_contents($file_name));
+
+		// Wrap in CAML
+		$CAML = '
+		<AddAttachment xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+			<listName>' . $list_name . '</listName>
+			<listItemID>' . $list_item_id . '</listItemID>
+			<fileName>' . $file_name . '</fileName>
+			<attachment>' . $attachment . '</attachment>
+		</AddAttachment>';
+
+		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			$this->soapClient->AddAttachment($xmlvar);
+		} catch (SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Return true on success
+		return true;
+	}
+
+	public function getAttachments ($list_name, $list_item_id) {
+		// Wrap in CAML
+		$CAML = '
+		<GetAttachmentCollection xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+			<listName>' . $list_name . '</listName>
+			<listItemID>' . $list_item_id . '</listItemID>
+		</GetAttachmentCollection>';
+
+		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			$rawXml = $this->soapClient->GetAttachmentCollection($xmlvar)->GetAttachmentCollectionResult->any;
+		} catch (SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Load XML in to DOM document and grab all list items.
+		$nodes = $this->getArrayFromElementsByTagName($rawXml, 'Attachment');
+
+		$attachments = array();
+
+		// Format data in to array or object
+		foreach ($nodes as $counter => $node) {
+			$attachments[] = $node->textContent;
+		}
+
+		// Return Array of attachment URLs
+		return $attachments;
+	}
+
 	/**
 	 * setReturnType
 	 * Change the dataType used to store List items.
@@ -1002,7 +1059,7 @@ class ListCRUD {
 	public function updateMultiple (array $data) {
 		return $this->api->updateMultiple($this->list_name, $data);
 	}
-	
+
 	/**
 	 * Delete
 	 * Delete an existing list item.
@@ -1201,7 +1258,7 @@ class SPQueryObj {
 		// return self
 		return $this;
 	}
-	
+
 	/**
 	 * getCAML
 	 * Combine and return the raw CAML data for the query operation that has been specified.
