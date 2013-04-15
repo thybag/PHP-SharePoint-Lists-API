@@ -8,6 +8,16 @@
  */
 class NTLM_SoapClient extends SoapClient {
 	/**
+	 * Username for SP auth
+	 */
+	private $spUsername = '';
+
+	/**
+	 * Password for SP auth
+	 */
+	private $spPassword = '';
+
+	/**
 	 * Overwritren constructor
 	 *
 	 * @param	string	$wsdl		WSDL location
@@ -30,6 +40,9 @@ class NTLM_SoapClient extends SoapClient {
 		// Set proxy host/port, defaults: localhost:8080
 		$this->proxy_host = (empty($options['proxy_host']) ? 'localhost' : $options['proxy_host']);
 		$this->proxy_port = (empty($options['proxy_port']) ? 8080 : $options['proxy_port']);
+
+		$this->spUsername = $options['login'];
+		$this->spPassword = $options['password'];
 
 		// Call parent constructor
 		parent::__construct($wsdl, $options);
@@ -78,6 +91,16 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_VERBOSE       , FALSE);
 		curl_setopt($handle, CURLOPT_FRESH_CONNECT , TRUE);
 
+		// NTLM
+		curl_setopt($handle, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+		$userpwd = $this->spUsername . ":" . $this->spPassword;
+		curl_setopt($handle, CURLOPT_USERPWD, $userpwd);
+
+		// SSL
+		curl_setopt($handle, CURLOPT_SSLVERSION, 3);
+		curl_setopt($handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+		curl_setopt($handle, CURLOPT_SSL_VERIFYHOST, 2);
+
 		// HTTP headers
 		curl_setopt($handle, CURLOPT_USERAGENT     , 'PHP SOAP-NTLM Client/1.0');
 		curl_setopt($handle, CURLOPT_HTTPHEADER    , array(
@@ -93,6 +116,7 @@ class NTLM_SoapClient extends SoapClient {
 		curl_setopt($handle, CURLOPT_POST          , TRUE);
 		curl_setopt($handle, CURLOPT_POSTFIELDS    , $data);
 
+/*
 		if ((!empty($this->proxy_host)) && (!empty($this->proxy_port))) {
 			// Set proxy hostname:port
 			curl_setopt($handle, CURLOPT_PROXY, $this->proxy_host . ':' . $this->proxy_port);
@@ -104,6 +128,7 @@ class NTLM_SoapClient extends SoapClient {
 				curl_setopt($handle, CURLOPT_PROXYAUTH   , CURLAUTH_NTLM);
 			}
 		}
+*/
 
 		// Execute the request
 		$response = curl_exec($handle);

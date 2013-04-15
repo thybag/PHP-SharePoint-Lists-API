@@ -54,6 +54,14 @@
  */
 class SharePointAPI {
 	/**
+	 * Using NuSOAP?
+	 *
+	 * NuSOAP - SOAP Toolkit for PHP
+	 * http://sourceforge.net/projects/nusoap/
+	 */
+	private $usingNuSOAP = false;
+
+	/**
 	 * Username for SP auth
 	 */
 	private $spUsername = '';
@@ -161,6 +169,16 @@ class SharePointAPI {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
+		// using NuSOAP?
+		if(class_exists("nusoap_client"))
+		{
+			$this->usingNuSOAP = true;
+		}
+		else
+		{
+			$this->usingNuSOAP = false;
+		}
+
 		// Set data from parameters in this class
 		$this->spUsername = $spUsername;
 		$this->spPassword = $spPassword;
@@ -211,6 +229,13 @@ class SharePointAPI {
 					'proxy_host'     => $this->proxyHost,
 					'proxy_port'     => $this->proxyPort
 				)));
+
+				// using NuSOAP?
+				if($this->usingNuSOAP)
+				{
+					// set NTLM credentials
+					$this->soapClient->setCredentials($this->spUsername, $this->spPassword, "ntlm");
+				}
 			} else {
 				// Use regular client (for basic/digest auth)
 				$this->soapClient = new SoapClient($this->spWsdl, $options);
@@ -310,7 +335,15 @@ class SharePointAPI {
 		// Query Sharepoint for full listing of it's lists.
 		$rawXml = '';
 		try {
-			$rawXml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$rawXml = $this->soapClient->call("GetListCollection")->GetListCollectionResult->any;
+			}
+			else
+			{
+	-			$rawXml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -359,7 +392,15 @@ class SharePointAPI {
 		// Attempt to query Sharepoint
 		$rawXml = '';
 		try {
-			$rawXml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$rawXml = $this->soapClient->call("GetList", $CAML)->GetListResult->any;
+			}
+			else
+			{
+				$rawXml = $this->soapClient->GetList(new SoapVar($CAML, XSD_ANYXML))->GetListResult->any;
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -466,13 +507,24 @@ class SharePointAPI {
 				</queryOptions>
 			</GetListItems>';
 
-		// Ready XML
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		$result = NULL;
 
 		// Attempt to query Sharepoint
 		try {
-			$result = $this->xmlHandler($this->soapClient->GetListItems($xmlvar)->GetListItemsResult->any);
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$result = $this->soapClient->call("GetListItems", $CAML);
+				$result = $result["GetListItemsResult"];
+				$result = $result["listitems"];
+				$result = $result["data"];
+				$result = $result["row"];
+				$result = $this->cleanArray($result);
+			}
+			else
+			{
+				$result = $this->xmlHandler($this->soapClient->GetListItems(new SoapVar($CAML, XSD_ANYXML))->GetListItemsResult->any);
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -592,11 +644,17 @@ class SharePointAPI {
 			<attachment>' . $attachment . '</attachment>
 		</AddAttachment>';
 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
-
 		// Attempt to run operation
 		try {
-			$this->soapClient->AddAttachment($xmlvar);
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$this->soapClient->call("AddAttachment", $CAML);
+			}
+			else
+			{
+				$this->soapClient->AddAttachment(new SoapVar($CAML, XSD_ANYXML));
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -613,23 +671,44 @@ class SharePointAPI {
 			<listItemID>' . $list_item_id . '</listItemID>
 		</GetAttachmentCollection>';
 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
+		$result = NULL;
 
 		// Attempt to run operation
 		try {
-			$rawXml = $this->soapClient->GetAttachmentCollection($xmlvar)->GetAttachmentCollectionResult->any;
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$result = $this->soapClient->call("GetAttachmentCollection", $CAML);
+				$result = $result["GetAttachmentCollectionResult"];
+				$result = $result["Attachments"];
+			}
+			else
+			{
+				$rawXml = $this->soapClient->GetAttachmentCollection(new SoapVar($CAML, XSD_ANYXML))->GetAttachmentCollectionResult->any;
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
 
-		// Load XML in to DOM document and grab all list items.
-		$nodes = $this->getArrayFromElementsByTagName($rawXml, 'Attachment');
-
 		$attachments = array();
 
-		// Format data in to array or object
-		foreach ($nodes as $counter => $node) {
-			$attachments[] = $node->textContent;
+		// using NuSOAP?
+		if($this->usingNuSOAP)
+		{
+			// Format data in to array or object
+			foreach ($result as $attachment) {
+				$attachments[] = $attachment;
+			}
+		}
+		else
+		{
+			// Load XML in to DOM document and grab all list items.
+			$nodes = $this->getArrayFromElementsByTagName($rawXml, 'Attachment');
+
+			// Format data in to array or object
+			foreach ($nodes as $counter => $node) {
+				$attachments[] = $node->textContent;
+			}
 		}
 
 		// Return Array of attachment URLs
@@ -758,6 +837,30 @@ class SharePointAPI {
 		return $resultArray;
 	}
 
+	private function cleanArray($rawArray) {
+		$resultArray = array();
+
+		// Proccess rawArray and return nice clean associative Array of the results
+		foreach($rawArray as $i => $rawItem) {
+			$result = array();
+
+			foreach($rawItem as $attribute => $value) {
+				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
+
+				//  Re-assign all the attributes into an easy to access array
+				$result[str_replace('!ows_', '', $idx)] = $value;
+			}
+
+			if ($this->returnType === 1) {
+				settype($result, 'object');
+			}
+
+			$resultArray[] = $result;
+		}
+
+		return $resultArray;
+	}
+
 	/**
 	 * Query XML
 	 * Generates XML for WHERE Query
@@ -851,12 +954,26 @@ class SharePointAPI {
 			</updates>
 		</UpdateListItems>';
 
-		$xmlvar = new SoapVar($CAML, XSD_ANYXML);
 		$result = NULL;
 
 		// Attempt to run operation
 		try {
-			$result = $this->xmlHandler($this->soapClient->UpdateListItems($xmlvar)->UpdateListItemsResult->any);
+			// using NuSOAP?
+			if($this->usingNuSOAP)
+			{
+				$result = $this->soapClient->call("UpdateListItems", $CAML);
+				$result = $result["UpdateListItemsResult"];
+				$result = $result["Results"];
+				$result = $result["Result"];
+				unset($result["ErrorCode"]);
+				unset($result["ID"]);
+				unset($result["!ID"]);
+				$result = $this->cleanArray($result);
+			}
+			else
+			{
+				$result = $this->xmlHandler($this->soapClient->UpdateListItems(new SoapVar($CAML, XSD_ANYXML))->UpdateListItemsResult->any);
+			}
 		} catch (SoapFault $fault) {
 			$this->onError($fault);
 		}
@@ -1034,7 +1151,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function read ($limit = 0, $query = NULL) {
-		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
+		return $this->api->read($this->list_name, $limit, $query, NULL, NULL);
 	}
 
 	/**
