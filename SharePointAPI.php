@@ -65,7 +65,6 @@ class SharePointAPI {
 
 	/**
 	 * Location of WSDL
-	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
 	 */
 	private $spWsdl = '';
 
@@ -130,26 +129,6 @@ class SharePointAPI {
 	protected $internal_encoding = 'UTF-8';
 
 	/**
-	 * Proxy login (default: EMPTY
-	 */
-	protected $proxyLogin = '';
-
-	/**
-	 * Proxy password (default: EMPTY)
-	 */
-	protected $proxyPassword = '';
-
-	/**
-	 * Proxy hostname (default: EMPTY)
-	 */
-	protected $proxyHost = '';
-
-	/**
-	 * Proxy port (default: 8080)
-	 */
-	protected $proxyPort = 8080;
-
-	/**
 	 * Constructor
 	 *
 	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
@@ -157,7 +136,7 @@ class SharePointAPI {
 	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($spUsername, $spPassword, $spWsdl, $useNtlm = FALSE) {
+	public function __construct ($spUsername, $spPassword, $spWsdl) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -180,16 +159,6 @@ class SharePointAPI {
 			'encoding'     => $this->internal_encoding,
 		);
 
-		// Auto-detect http(s):// URLs
-		// If using NTLM, switch to non-wsdl mode (as http wsdls cannot be used). Do nothing if ntlm is not being used.
-		if ($useNtlm && ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://'))) {
-			// Add location,uri options and set wsdl=NULL
-			// @TODO Is location/uri the same???
-			$options['location'] = $this->spWsdl;
-			$options['uri']      = $this->spWsdl;
-			$this->spWsdl = NULL;
-		}
-
 		// Is login set?
 		if (!empty($this->spUsername)) {
 			// Then set login data
@@ -199,20 +168,10 @@ class SharePointAPI {
 
 		// Create new SOAP Client
 		try {
-			// NTLM authentication or regular SOAP client?
-			if ($useNtlm === TRUE) {
-				// Load include once
-				require_once 'NTLM_SoapClient.php';
-
-				// Use NTLM authentication client
-				$this->soapClient = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
-					'proxy_login'    => $this->proxyLogin,
-					'proxy_password' => $this->proxyPassword,
-					'proxy_host'     => $this->proxyHost,
-					'proxy_port'     => $this->proxyPort
-				)));
+      if (isset($options['login'])) {
+        // If using authentication then use the custom SoapClientAuth class.
+        $this->soapClient = new SoapClientAuth($this->spWsdl, $options);
 			} else {
-				// Use regular client (for basic/digest auth)
 				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
 		} catch (SoapFault $fault) {
@@ -1034,7 +993,7 @@ class ListCRUD {
 	 * @return Array
 	 */
 	public function read ($limit = 0, $query = NULL) {
-		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
+		return $this->api->read($this->list_name, $limit, $query);
 	}
 
 	/**
