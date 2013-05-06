@@ -378,10 +378,11 @@ class SharePointAPI {
 	 * @param Array $query
 	 * @param String (GUID) $view "View to display results with."
 	 * @param Array $sort
+   * @param String $options "XML string of query options."
 	 *
 	 * @return Array
 	 */
-	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
+	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL, $options = NULL) {
 		// Check limit is set
 		if ($limit < 1 || is_null($limit)) {
 			$limit = $this->MAX_ROWS;
@@ -421,8 +422,10 @@ class SharePointAPI {
 				<rowLimit>' . $limit . '</rowLimit>
 				' . $xml_options . '
 				<queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
-					<QueryOptions/>
-				</queryOptions>
+				  <QueryOptions>' .
+				  $options .
+          '</QueryOptions>
+        </queryOptions>
 			</GetListItems>';
 
 		// Ready XML
