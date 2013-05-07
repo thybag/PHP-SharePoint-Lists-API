@@ -63,7 +63,7 @@ class SoapClientAuth extends SoapClient {
     stream_wrapper_restore('http');
   }
 
-  function __doRequest($request, $location, $action, $version) {
+  function __doRequest($request, $location, $action, $version, $one_way = 0) {
 
     $headers = array(
       'User-Agent: PHP-SOAP',
