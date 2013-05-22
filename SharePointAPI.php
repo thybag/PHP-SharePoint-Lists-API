@@ -512,10 +512,11 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to delete
+   * @param array $data An array of additional required key/value pairs for the item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function delete ($list_name, $ID) {
-		return $this->deleteMultiple($list_name, array($ID));
+	public function delete ($list_name, $ID, array $data) {
+		return $this->deleteMultiple($list_name, array($ID), array($ID => $data));
 	}
 
 	/**
@@ -524,21 +525,32 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of list
 	 * @param array $IDs IDs of items to delete
+   * @param array $data An array of arrays of additional required key/value pairs for each item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function deleteMultiple ($list_name, array $IDs) {
+	public function deleteMultiple ($list_name, array $IDs, array $data) {
 		/*
 		 * change input "array(ID1, ID2, ID3)" to "array(array('id' => ID1),
 		 * array('id' => ID2), array('id' => ID3))" in order to be compatible
 		 * with modifyList.
+		 *
+		 * For each ID also check if we have any additional data. If so then
+		 * add it to the delete data.
 		 */
-		$ID_list = array();
+		$deletes = array();
 		foreach ($IDs as $ID) {
-			$ID_list[] = array('ID' => $ID);
+			$delete = array('ID' => $ID);
+			// Add additional data if available
+			if (!empty($data[$ID])) {
+			  foreach ($data[$ID] as $key => $value) {
+			    $delete[$key] = $value;
+			  }
+			}
+			$deletes[] = $delete;
 		}
 
 		// Return a XML as nice clean Array
-		return $this->modifyList($list_name, $ID_list, 'Delete');
+		return $this->modifyList($list_name, $deletes, 'Delete');
 	}
 
 	public function addAttachment ($list_name, $list_item_id, $file_name) {
