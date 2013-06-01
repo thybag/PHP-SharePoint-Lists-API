@@ -136,7 +136,7 @@ class SharePointAPI {
 	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($spUsername, $spPassword, $spWsdl) {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $NTLM = false) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -168,9 +168,11 @@ class SharePointAPI {
 
 		// Create new SOAP Client
 		try {
-      if (isset($options['login'])) {
-        // If using authentication then use the custom SoapClientAuth class.
-        $this->soapClient = new SoapClientAuth($this->spWsdl, $options);
+      		if (isset($options['login']) && $NTLM) {
+      			// Ensure SoapClientAuth is included
+      			require_once 'SoapClientAuth.php';
+	       		// If using authentication then use the custom SoapClientAuth class.
+	        	$this->soapClient = new SoapClientAuth($this->spWsdl, $options);
 			} else {
 				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
