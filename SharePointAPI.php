@@ -380,7 +380,7 @@ class SharePointAPI {
 	 * @param Array $query
 	 * @param String (GUID) $view "View to display results with."
 	 * @param Array $sort
-   * @param String $options "XML string of query options."
+	 * @param String $options "XML string of query options."
 	 *
 	 * @return Array
 	 */
@@ -514,23 +514,23 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to delete
-   * @param array $data An array of additional required key/value pairs for the item to delete e.g. FileRef => URL to file.
+	 * @param array $data An array of additional required key/value pairs for the item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function delete ($list_name, $ID, array $data) {
+	public function delete ($list_name, $ID, array $data = array()) {
 		return $this->deleteMultiple($list_name, array($ID), array($ID => $data));
 	}
 
 	/**
-	 * DeleteMUlti
+	 * DeleteMultiple
 	 * Delete existing multiple list items.
 	 *
 	 * @param String $list_name Name of list
 	 * @param array $IDs IDs of items to delete
-   * @param array $data An array of arrays of additional required key/value pairs for each item to delete e.g. FileRef => URL to file.
+	 * @param array $data An array of arrays of additional required key/value pairs for each item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function deleteMultiple ($list_name, array $IDs, array $data) {
+	public function deleteMultiple ($list_name, array $IDs, array $data = array()) {
 		/*
 		 * change input "array(ID1, ID2, ID3)" to "array(array('id' => ID1),
 		 * array('id' => ID2), array('id' => ID3))" in order to be compatible
@@ -550,6 +550,7 @@ class SharePointAPI {
 			}
 			$deletes[] = $delete;
 		}
+
 
 		// Return a XML as nice clean Array
 		return $this->modifyList($list_name, $deletes, 'Delete');
@@ -1009,8 +1010,8 @@ class ListCRUD {
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read ($limit = 0, $query = NULL) {
-		return $this->api->read($this->list_name, $limit, $query);
+	public function read ($limit = 0, $query = NULL, $view = NULL, $sort = NULL, $options = NULL) {
+		return $this->api->read($this->list_name, $limit, $query, $view, $sort, $options);
 	}
 
 	/**
@@ -1043,8 +1044,8 @@ class ListCRUD {
 	 * @param int $item_id ID of item to delete
 	 * @return Array
 	 */
-	public function delete ($item_id) {
-		return $this->api->delete($this->list_name, $item_id);
+	public function delete ($item_id, array $data = array()) {
+		return $this->api->delete($this->list_name, $item_id, $data);
 	}
 
 	/**
