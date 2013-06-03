@@ -1,6 +1,6 @@
 # PHP SharePoint Lists API
 
-The **PHP SharePoint Lists API** is designed to make working with SharePoint Lists in PHP a less painful developer experince. Rather than messing around with SOAP and CAML requests, just include the SharePoint lists API in to you're project and you should be good to go. This library is free for anyone to use and is licensed under the MIT license.
+The **PHP SharePoint Lists API** is designed to make working with SharePoint Lists in PHP a less painful developer experience. Rather than messing around with SOAP and CAML requests, just include the SharePoint lists API in to your project and you should be good to go. This library is free for anyone to use and is licensed under the MIT license.
 
 The current version includes the ability to read, add, edit, delete and query items from existing SharePoint lists, as well as to add and remove attachments. You can also query list metadata and the list of lists.
 
@@ -13,7 +13,7 @@ Tested on SharePoint 2007.
 Download the WSDL file for the SharePoint Lists you want to interact with. This can normally be obtained at:
     `sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL`
 
-If you are using composer, just add `thybag/php-sharepoint-lists-api` to your `composer.json` and run composer.
+If you are using [composer](http://getcomposer.org/) , just add `thybag/php-sharepoint-lists-api` to your `composer.json` and run composer.
 
     {
         "require": {
@@ -21,7 +21,7 @@ If you are using composer, just add `thybag/php-sharepoint-lists-api` to your `c
         }
     }
 
-If you are not using [composer](http://getcomposer.org/) you can download a copy of the SharePointAPI files manually and include the SharePointAPI.php class in your project.
+If you are not using composer you can download a copy of the SharePointAPI files manually and include the SharePointAPI.php class in your project.
 
 The script requires a user/service account with permissions to the required list in order to function.
 
