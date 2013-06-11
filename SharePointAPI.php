@@ -65,7 +65,6 @@ class SharePointAPI {
 
 	/**
 	 * Location of WSDL
-	 * @FIXME Cannot be an URL (http://foo/bar/Lists.asmx?WSDL) if NTLM auth is being used
 	 */
 	private $spWsdl = '';
 
@@ -130,26 +129,6 @@ class SharePointAPI {
 	protected $internal_encoding = 'UTF-8';
 
 	/**
-	 * Proxy login (default: EMPTY
-	 */
-	protected $proxyLogin = '';
-
-	/**
-	 * Proxy password (default: EMPTY)
-	 */
-	protected $proxyPassword = '';
-
-	/**
-	 * Proxy hostname (default: EMPTY)
-	 */
-	protected $proxyHost = '';
-
-	/**
-	 * Proxy port (default: 8080)
-	 */
-	protected $proxyPort = 8080;
-
-	/**
 	 * Constructor
 	 *
 	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
@@ -157,7 +136,7 @@ class SharePointAPI {
 	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($spUsername, $spPassword, $spWsdl, $useNtlm = FALSE) {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $NTLM = false) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -180,16 +159,6 @@ class SharePointAPI {
 			'encoding'     => $this->internal_encoding,
 		);
 
-		// Auto-detect http(s):// URLs
-		// If using NTLM, switch to non-wsdl mode (as http wsdls cannot be used). Do nothing if ntlm is not being used.
-		if ($useNtlm && ((substr($this->spWsdl, 0, 7) == 'http://') || (substr($this->spWsdl, 0, 8) == 'https://'))) {
-			// Add location,uri options and set wsdl=NULL
-			// @TODO Is location/uri the same???
-			$options['location'] = $this->spWsdl;
-			$options['uri']      = $this->spWsdl;
-			$this->spWsdl = NULL;
-		}
-
 		// Is login set?
 		if (!empty($this->spUsername)) {
 			// Then set login data
@@ -199,20 +168,12 @@ class SharePointAPI {
 
 		// Create new SOAP Client
 		try {
-			// NTLM authentication or regular SOAP client?
-			if ($useNtlm === TRUE) {
-				// Load include once
-				require_once 'NTLM_SoapClient.php';
-
-				// Use NTLM authentication client
-				$this->soapClient = new NTLM_SoapClient($this->spWsdl, array_merge($options, array(
-					'proxy_login'    => $this->proxyLogin,
-					'proxy_password' => $this->proxyPassword,
-					'proxy_host'     => $this->proxyHost,
-					'proxy_port'     => $this->proxyPort
-				)));
+      		if (isset($options['login']) && $NTLM) {
+      			// Ensure SoapClientAuth is included
+      			require_once 'SoapClientAuth.php';
+	       		// If using authentication then use the custom SoapClientAuth class.
+	        	$this->soapClient = new SoapClientAuth($this->spWsdl, $options);
 			} else {
-				// Use regular client (for basic/digest auth)
 				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
 		} catch (SoapFault $fault) {
@@ -419,10 +380,11 @@ class SharePointAPI {
 	 * @param Array $query
 	 * @param String (GUID) $view "View to display results with."
 	 * @param Array $sort
+	 * @param String $options "XML string of query options."
 	 *
 	 * @return Array
 	 */
-	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
+	public function read ($list_name, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL, $options = NULL) {
 		// Check limit is set
 		if ($limit < 1 || is_null($limit)) {
 			$limit = $this->MAX_ROWS;
@@ -462,8 +424,10 @@ class SharePointAPI {
 				<rowLimit>' . $limit . '</rowLimit>
 				' . $xml_options . '
 				<queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
-					<QueryOptions/>
-				</queryOptions>
+				  <QueryOptions>' .
+				  $options .
+          '</QueryOptions>
+        </queryOptions>
 			</GetListItems>';
 
 		// Ready XML
@@ -550,33 +514,46 @@ class SharePointAPI {
 	 *
 	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to delete
+	 * @param array $data An array of additional required key/value pairs for the item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function delete ($list_name, $ID) {
-		return $this->deleteMultiple($list_name, array($ID));
+	public function delete ($list_name, $ID, array $data = array()) {
+		return $this->deleteMultiple($list_name, array($ID), array($ID => $data));
 	}
 
 	/**
-	 * DeleteMUlti
+	 * DeleteMultiple
 	 * Delete existing multiple list items.
 	 *
 	 * @param String $list_name Name of list
 	 * @param array $IDs IDs of items to delete
+	 * @param array $data An array of arrays of additional required key/value pairs for each item to delete e.g. FileRef => URL to file.
 	 * @return Array
 	 */
-	public function deleteMultiple ($list_name, array $IDs) {
+	public function deleteMultiple ($list_name, array $IDs, array $data = array()) {
 		/*
 		 * change input "array(ID1, ID2, ID3)" to "array(array('id' => ID1),
 		 * array('id' => ID2), array('id' => ID3))" in order to be compatible
 		 * with modifyList.
+		 *
+		 * For each ID also check if we have any additional data. If so then
+		 * add it to the delete data.
 		 */
-		$ID_list = array();
+		$deletes = array();
 		foreach ($IDs as $ID) {
-			$ID_list[] = array('ID' => $ID);
+			$delete = array('ID' => $ID);
+			// Add additional data if available
+			if (!empty($data[$ID])) {
+			  foreach ($data[$ID] as $key => $value) {
+			    $delete[$key] = $value;
+			  }
+			}
+			$deletes[] = $delete;
 		}
 
+
 		// Return a XML as nice clean Array
-		return $this->modifyList($list_name, $ID_list, 'Delete');
+		return $this->modifyList($list_name, $deletes, 'Delete');
 	}
 
 	public function addAttachment ($list_name, $list_item_id, $file_name) {
@@ -1033,8 +1010,8 @@ class ListCRUD {
 	 * @param Array $query
 	 * @return Array
 	 */
-	public function read ($limit = 0, $query = NULL) {
-		return $this->api->read($this->list_name, $limit, $query, $view, $sort);
+	public function read ($limit = 0, $query = NULL, $view = NULL, $sort = NULL, $options = NULL) {
+		return $this->api->read($this->list_name, $limit, $query, $view, $sort, $options);
 	}
 
 	/**
@@ -1067,8 +1044,8 @@ class ListCRUD {
 	 * @param int $item_id ID of item to delete
 	 * @return Array
 	 */
-	public function delete ($item_id) {
-		return $this->api->delete($this->list_name, $item_id);
+	public function delete ($item_id, array $data = array()) {
+		return $this->api->delete($this->list_name, $item_id, $data);
 	}
 
 	/**
