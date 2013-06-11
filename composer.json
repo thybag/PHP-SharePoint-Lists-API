@@ -12,6 +12,6 @@
         }
     ],
     "autoload": {
-        "classmap": ["SharePointAPI.php", "NTLM_SoapClient.php"]
+        "classmap": ["SharePointAPI.php", "SoapClientAuth.php"]
     }
 }
