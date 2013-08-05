@@ -45,11 +45,18 @@ class SoapClientAuth extends SoapClient {
    * @param array $options
    */
   function SoapClientAuth($wsdl, $options = NULL) {
-    stream_wrapper_unregister('https');
+
+
+    $wrappers = stream_get_wrappers();
+
     stream_wrapper_unregister('http');
-    stream_wrapper_register('https', 'streamWrapperHttpAuth');
     stream_wrapper_register('http', 'streamWrapperHttpAuth');
 
+    if (in_array("https", $wrappers)) {
+      stream_wrapper_unregister('https');
+      stream_wrapper_register('https', 'streamWrapperHttpAuth');
+    }
+    
     if ($options) {
       $this->Username = $options['login'];
       streamWrapperHttpAuth::$Username = $this->Username;
@@ -59,8 +66,9 @@ class SoapClientAuth extends SoapClient {
 
     parent::SoapClient($wsdl, ($options ? $options : array()));
 
-    stream_wrapper_restore('https');
     stream_wrapper_restore('http');
+    if (in_array("https", $wrappers)) stream_wrapper_restore('https');
+    
   }
 
   function __doRequest($request, $location, $action, $version, $one_way = 0) {
