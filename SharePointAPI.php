@@ -447,6 +447,23 @@ class SharePointAPI {
 	}
 
 	/**
+	 * ReadFromFolder
+	 * Use's raw CAML to query sharepoint data from a folder
+	 *
+	 * @param String $listName 
+	 * @param String $folderName
+	 * @param String $limit
+	 * @param String $query
+	 * @param String $view 
+	 * @param String $sort
+	 *
+	 * @return Array
+	 */
+	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL){
+		return $this->read($list_name, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
+	}
+
+	/**
 	 * Write
 	 * Create new item in a sharepoint list
 	 *
