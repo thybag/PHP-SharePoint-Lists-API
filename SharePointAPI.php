@@ -459,7 +459,7 @@ class SharePointAPI {
 	 *
 	 * @return Array
 	 */
-	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL){
+	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
 		return $this->read($list_name, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
 	}
 
@@ -927,13 +927,13 @@ class SharePointAPI {
 	 *
 	 * @return "lookup" value sharepoint will accept
 	 */
-	public function magicLookup ($name, $list){
+	public function magicLookup ($name, $list) {
 		//Perform lookup for specified item on specified list
 		$find = $this->read($list, null, array('Title' => $name));
 		//If we get a result (and there is only one of them) return it in "Lookup" format
-		if (isset($find[0]) && count($find) === 1){
+		if (isset($find[0]) && count($find) === 1) {
 			settype($find[0], 'array');//Set type to array in case API is in object mode.
-			if ($this->lower_case_indexs){
+			if ($this->lower_case_indexs) {
 				return static::lookup($find[0]['id'], $find[0]['title']);
 			} else {
 				return static::lookup($find[0]['ID'], $find[0]['Title']);
@@ -952,7 +952,7 @@ class SharePointAPI {
 	 *
 	 *@return date sharepoint will accept
 	 */
-	public static function dateTime ($date, $timestamp = FALSE){
+	public static function dateTime ($date, $timestamp = FALSE) {
 		return ($timestamp) ? date('c',$date) : date('c', strtotime($date));
 	}
 
@@ -964,7 +964,7 @@ class SharePointAPI {
 	 *
 	 * @return "lookup" value sharepoint will accept
 	 */
-	public static function lookup ($id, $title = ''){
+	public static function lookup ($id, $title = '') {
 		return $id . (($title !== '') ? ';#' . $title : '');
 	}
 }
