@@ -31,18 +31,18 @@
  *
  * WriteMultiple:
  * $sp->writeMultiple('<list_name>', array(
- * 					array('Title' => 'New item'),
- *					array('Title' => 'New item 2')
- * 				));
+ * 		array('Title' => 'New item'),
+ * 		array('Title' => 'New item 2')
+ * 	));
  *
  * Update:
  * $sp->update('<list_name>','<row_id>', array('<col_name>'=>'<new_data>'));
  *
  * UpdateMultiple:
  * $sp->updateMultiple('<list_name>', array(
- * 					array('ID'=>1, 'Title' => 'new name'),
- *					array('ID'=>2, 'Title' => 'New name 2')
- * 				));
+ * 		array('ID'=>1, 'Title' => 'new name'),
+ * 		array('ID'=>2, 'Title' => 'New name 2')
+ * 	));
  *
  * Delete:
  * $sp->delete('<list_name>','<row_id>');
@@ -133,10 +133,10 @@ class SharePointAPI {
 	 *
 	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
 	 * @param string $spPassword Password to use with authenticating account.
-	 * @param string $spWsdl WSDL file for this set of lists  ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
+	 * @param string $spWsdl WSDL file for this set of lists ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
 	 * @param Whether to authenticate with NTLM
 	 */
-	public function __construct ($spUsername, $spPassword, $spWsdl, $NTLM = false) {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $NTLM = FALSE) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -168,11 +168,12 @@ class SharePointAPI {
 
 		// Create new SOAP Client
 		try {
-      		if (isset($options['login']) && $NTLM) {
-      			// Ensure SoapClientAuth is included
-      			require_once 'SoapClientAuth.php';
-	       		// If using authentication then use the custom SoapClientAuth class.
-	        	$this->soapClient = new SoapClientAuth($this->spWsdl, $options);
+			if ((isset($options['login'])) && ($NTLM === TRUE)) {
+				// Ensure SoapClientAuth is included
+				require_once 'SoapClientAuth.php';
+
+				// If using authentication then use the custom SoapClientAuth class.
+				$this->soapClient = new SoapClientAuth($this->spWsdl, $options);
 			} else {
 				$this->soapClient = new SoapClient($this->spWsdl, $options);
 			}
@@ -424,10 +425,10 @@ class SharePointAPI {
 				<rowLimit>' . $limit . '</rowLimit>
 				' . $xml_options . '
 				<queryOptions xmlns:SOAPSDK9="http://schemas.microsoft.com/sharepoint/soap/" >
-				  <QueryOptions>' .
-				  $options .
-          '</QueryOptions>
-        </queryOptions>
+					<QueryOptions>
+						' . $options . '
+					</QueryOptions>
+				</queryOptions>
 			</GetListItems>';
 
 		// Ready XML
@@ -443,6 +444,23 @@ class SharePointAPI {
 
 		// Return a XML as nice clean Array
 		return $result;
+	}
+
+	/**
+	 * ReadFromFolder
+	 * Use's raw CAML to query sharepoint data from a folder
+	 *
+	 * @param String $listName 
+	 * @param String $folderName
+	 * @param String $limit
+	 * @param String $query
+	 * @param String $view 
+	 * @param String $sort
+	 *
+	 * @return Array
+	 */
+	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
+		return $this->read($list_name, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
 	}
 
 	/**
@@ -491,6 +509,7 @@ class SharePointAPI {
 		$data['ID'] = $ID;
 		return $this->updateMultiple($list_name, array($data));
 	}
+
 	// aliases
 	public function edit($list_name, $ID, array $data) { return $this->update ($list_name, $ID, $data); }
 
@@ -505,6 +524,7 @@ class SharePointAPI {
 	public function updateMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'Update');
 	}
+
 	// aliases
 	public function editMultiple($list_name, array $items) { return $this->updateMultiple ($list_name, $items); }
 
@@ -645,7 +665,7 @@ class SharePointAPI {
 	 * Create a query against a list in sharepoint
 	 *
 	 * Build querys as $sp->query('my_list')->where('score','>',15)->and_where('year','=','9')->get();
-	 * 
+	 *
 	 * @param List name / GUID number
 	 * @return SP List Item
 	 */
@@ -760,10 +780,10 @@ class SharePointAPI {
 	}
 
 	/**
-	 * "Getter" for sort ascending (TRUE) or descending (FALSE) from given value
+	 * "Getter" for sort ascending ("true") or descending ("false") from given value
 	 *
 	 * @param	string	$value	Value to be checked
-	 * @return	string	$sort	"TRUE" for ascending, "false" (default) for descending
+	 * @return	string	$sort	"true" for ascending, "false" (default) for descending
 	 */
 	public function getSortFromValue ($value) {
 		// Make all lower-case
@@ -907,20 +927,20 @@ class SharePointAPI {
 	 *
 	 * @return "lookup" value sharepoint will accept
 	 */
-	public function magicLookup($name, $list){
+	public function magicLookup ($name, $list) {
 		//Perform lookup for specified item on specified list
-		$find = $this->read($list,null,array('Title'=>$name));
+		$find = $this->read($list, null, array('Title' => $name));
 		//If we get a result (and there is only one of them) return it in "Lookup" format
-		if(isset($find[0]) && count($find) === 1){
+		if (isset($find[0]) && count($find) === 1) {
 			settype($find[0], 'array');//Set type to array in case API is in object mode.
-			if($this->lower_case_indexs){
+			if ($this->lower_case_indexs) {
 				return static::lookup($find[0]['id'], $find[0]['title']);
-			}else{
+			} else {
 				return static::lookup($find[0]['ID'], $find[0]['Title']);
 			}
-		}else{
+		} else {
 			//If we didnt find anything / got to many, throw exception
-			throw new Exception("Unable to perform automated lookup for value in {$list}.");
+			throw new Exception('Unable to perform automated lookup for value in ' . $list . '.');
 		}
 	}
 
@@ -932,7 +952,7 @@ class SharePointAPI {
 	 *
 	 *@return date sharepoint will accept
 	 */
-	public static function dateTime($date, $timestamp = false){
+	public static function dateTime ($date, $timestamp = FALSE) {
 		return ($timestamp) ? date('c',$date) : date('c', strtotime($date));
 	}
 
@@ -944,11 +964,9 @@ class SharePointAPI {
 	 *
 	 * @return "lookup" value sharepoint will accept
 	 */
-	public static function lookup($id, $title = ''){
-		return $id.(($title!=='')?";#{$title}":'');
+	public static function lookup ($id, $title = '') {
+		return $id . (($title !== '') ? ';#' . $title : '');
 	}
-
-
 }
 
 /**
