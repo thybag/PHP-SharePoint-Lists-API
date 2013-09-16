@@ -452,6 +452,7 @@ class SharePointAPI {
 	 *
 	 * @param String $listName 
 	 * @param String $folderName
+	 * @param bool   $isLibrary
 	 * @param String $limit
 	 * @param String $query
 	 * @param String $view 
@@ -459,8 +460,8 @@ class SharePointAPI {
 	 *
 	 * @return Array
 	 */
-	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
-		return $this->read($list_name, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
+	public function readFromFolder($listName, $folderName = '', $isLibrary = false, $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
+		return $this->read($listName, $limit, $query, $view, $sort, "<Folder>" . ($isLibrary ? '' : 'Lists/') . $listName . '/' . $folderName . "</Folder>" );
 	}
 
 	/**
