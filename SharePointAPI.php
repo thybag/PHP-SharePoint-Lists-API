@@ -460,7 +460,7 @@ class SharePointAPI {
 	 * @return Array
 	 */
 	public function readFromFolder($listName, $folderName = '', $limit = NULL, $query = NULL, $view = NULL, $sort = NULL) {
-		return $this->read($list_name, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
+		return $this->read($listName, $limit, $query, $view, $sort, "<Folder>" . $listName . '\\' . $folderName . "</Folder>" );
 	}
 
 	/**
