@@ -25,11 +25,11 @@ If you are not using composer you can download a copy of the SharePointAPI files
 
 The script requires a user/service account with permissions to the required list in order to function.
 
-    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
+    $sp = new \Thybag\SharepointApi('<username>', '<password>', '<path_to_WSDL>');
 
 Or if you wish to use NTLM to authenticate:
 
-    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', true);
+    $sp = new \Thybag\SharepointApi('<username>', '<password>', '<path_to_WSDL>', true);
 
 #### Reading from a List.
 
@@ -149,11 +149,11 @@ The PHP SharePoint API contains a number of helper methods to make it easier to 
 
 The dataTime method can either be passed a text based date
 
-     $date = SharePointAPI::dateTime("2012-12-21");
+     $date = \Thybag\SharepointApi::dateTime("2012-12-21");
 
 Or a unix timestamp
 
-    $date = SharePointAPI::dateTime(time(), true);
+    $date = \Thybag\SharepointApi::dateTime(time(), true);
 
 And will return a value which can be stored in to SharePoints DateTime fields without issue.
 
@@ -161,11 +161,11 @@ And will return a value which can be stored in to SharePoints DateTime fields wi
 
 The lookup data type in SharePoint is for fields that reference a row in another list. In order to correctly populate these values you will need to know the ID of the row the value needs to reference.
 
-    $value = SharePointAPI::lookup('3','Pepperoni Pizza');
+    $value = \Thybag\SharepointApi::lookup('3','Pepperoni Pizza');
 
 If you do not know the name/title of the value you are storing the method will work fine with just an ID (which sharepoint will also accept directly)
     
-    $value = SharePointAPI::lookup('3');
+    $value = \Thybag\SharepointApi::lookup('3');
 
 #### Magic Lookup
 
