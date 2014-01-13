@@ -12,6 +12,9 @@
         }
     ],
     "autoload": {
-        "classmap": ["SharePointAPI.php", "SoapClientAuth.php"]
+        #"classmap": ["SharePointAPI.php", "SoapClientAuth.php"]
+		"psr-0": {
+			"Thybag\\SharepointApi" : "lib/"
+		}
     }
 }
