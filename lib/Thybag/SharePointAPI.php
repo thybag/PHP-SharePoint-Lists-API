@@ -179,7 +179,7 @@ class SharePointAPI {
 			} else {
 				$this->soapClient = new \SoapClient($this->spWsdl, $options);
 			}
-		} catch (SoapFault $fault) {
+		} catch (\SoapFault $fault) {
 			// If we are unable to create a Soap Client display a Fatal error.
 			throw new \Exception('Unable to locate WSDL file. faultcode=' . $fault->getCode() . ',faultstring=' . $fault->getMessage());
 		}
@@ -275,7 +275,7 @@ class SharePointAPI {
 		$rawXml = '';
 		try {
 			$rawXml = $this->soapClient->GetListCollection()->GetListCollectionResult->any;
-		} catch (SoapFault $fault) {
+		} catch (\SoapFault $fault) {
 			$this->onError($fault);
 		}
 
@@ -398,7 +398,7 @@ class SharePointAPI {
 		$xml_query   = '';
 
 		// Setup Options
-		if ($query instanceof SPQueryObj) {
+		if ($query instanceof Service\QueryObjectService) {
 			$xml_query = $query->getCAML();
 		} else {
 			if (!is_null($view)) {
@@ -910,7 +910,7 @@ class SharePointAPI {
 	 * @param	$fault		Error Information
 	 * @throws	\Exception	Puts data from $fault into an other exception
 	 */
-	private function onError (SoapFault $fault) {
+	private function onError (\SoapFault $fault) {
 		$more = '';
 		if (isset($fault->detail->errorstring)) {
 			$more = 'Detailed: ' . $fault->detail->errorstring;

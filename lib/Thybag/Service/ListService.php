@@ -1,5 +1,5 @@
 <?php
-namespace Thybag\Sharepoint;
+namespace Thybag\Service;
 
 /**
  * ListCRUD
