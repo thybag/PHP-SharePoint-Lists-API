@@ -15,27 +15,40 @@ class SharePointOnlineAuth extends \SoapClient {
 		}
 		$cookie_string = substr($cookie_string, 0, -2);
 		
-		
+		$headers = array();
+		$headers[] = "Content-Type: text/xml;";
+
         $curl = curl_init($location);
 
-        curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-        curl_setopt($curl, CURLOPT_COOKIE, $cookie_string); 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($curl, CURLOPT_POST, TRUE);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, array("Content-Type: text/xml"));
+        curl_setopt($curl, CURLOPT_COOKIE, $cookie_string); 
+     
         curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         curl_setopt($curl, CURLOPT_SSLVERSION, 3);
+        curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 
-		curl_setopt($curl, CURLOPT_VERBOSE,false);
+		curl_setopt($curl, CURLOPT_VERBOSE,FALSE);
         curl_setopt($curl, CURLOPT_HEADER, FALSE);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+        // bit of a hack for now
+        if(strpos($request, 'UpdateListItems') !== FALSE){
+    		$headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
+        }
+
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
         $response = curl_exec($curl);
-        //print_r(curl_getinfo($curl));
+        
         if (curl_errno($curl))
         {
             throw new \Exception(curl_error($curl));
+        }
+
+        if($response == ''){
+        	 throw new \Exception("No XML returned");
         }
 
         curl_close($curl);
