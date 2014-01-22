@@ -4,14 +4,16 @@ The **PHP SharePoint Lists API** is designed to make working with SharePoint Lis
 
 Using the PHP SharePoint Lists API, you can easily create, read, edit and delete from SharePoint list. The API also has support for querying list metadata and the list of lists.
 
-Tested against SharePoint 2007 & SharePoint Online.
+Known to work with: SharePoint 2007, SharePoint Online.
 
 ### Usage Instructions
+
+#### Installation
 
 Download the WSDL file for the SharePoint Lists you want to interact with. This can normally be obtained at:
     `sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL`
 
-If you are using [composer](http://getcomposer.org/) , just add `thybag/php-sharepoint-lists-api` to your `composer.json` and run composer.
+If you are using [composer](http://getcomposer.org/), just add `[thybag/php-sharepoint-lists-api](https://packagist.org/packages/thybag/php-sharepoint-lists-api)` to your `composer.json` and run composer.
 
     {
         "require": {
@@ -19,21 +21,23 @@ If you are using [composer](http://getcomposer.org/) , just add `thybag/php-shar
         }
     }
 
-If you are not using composer you can download a copy of the SharePointAPI files manually and include the top SharePointAPI.php class in your project.
+If you are not using composer you can download a copy of the SharePointAPI files manually and include the top "SharePointAPI.php" class in your project.
 
-In order to use the PHP SharePoint Lists API< you will need a valid user/service account with the permissions to the required list. 
+#### Creating SharePointAPI object
 
-For most SharePoint installtions, you can create a new instance of the API using:
+In order to use the PHP SharePoint Lists API you will need a valid user/service account with the permissions to the required list. 
+
+For most SharePoint installations, you can create a new instance of the API using:
 
     use Thybag\SharePointAPI;
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
 
-If your installtion requires NTLM Authenication, you can instead use
+If your installation requires NTLM Authentication, you can instead use:
 
     use Thybag\SharePointAPI;
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'NTLM');
 
-SharePoint Online users must use
+SharePoint Online users must use:
 
     use Thybag\SharePointAPI;
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'SPONLINE');
@@ -116,7 +120,7 @@ When using updateMultiple every item MUST have an ID.
 
 #### Deleting Rows
 
-In order to delete a rowq, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
+In order to delete a row, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
 
     $sp->delete('<list_name>', '5');
 
@@ -133,12 +137,12 @@ want to perform multiple actions on the same list. Crud methods do not require a
     $list->create(array( 'id'=>1, 'name'=>'Fred' ));
 
 #### List all Lists.
-You can get a full listing of all avaiable lists within the connected sharepoint subsite by calling:
+You can get a full listing of all available lists within the connected SharePoint subsite by calling:
 
     $sp->getLists();
 
 #### List metaData.
-You can access a lists meta data (Column configurtion for example) by calling
+You can access a lists meta data (Column configuration for example) by calling
 
     $sp->readListMeta('My List');
 
@@ -146,7 +150,7 @@ By default the method will attempt to strip out non-useful columns from the resu
 
     $sp->readListMeta('My List',FALSE);
 
-You can also now ignore "hidden" colums:
+You can also now ignore "hidden" columns:
 
     $sp->readListMeta('My List', FALSE, TRUE);
 
@@ -173,7 +177,7 @@ The lookup data type in SharePoint is for fields that reference a row in another
 
     $value = \Thybag\SharepointApi::lookup('3','Pepperoni Pizza');
 
-If you do not know the name/title of the value you are storing the method will work fine with just an ID (which sharepoint will also accept directly)
+If you do not know the name/title of the value you are storing the method will work fine with just an ID (which SharePoint will also accept directly)
     
     $value = \Thybag\SharepointApi::lookup('3');
 
