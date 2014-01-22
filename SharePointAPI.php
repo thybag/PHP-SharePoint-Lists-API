@@ -10,8 +10,8 @@
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
  *
- *	Add backwards compatability for none composer users:
- *	Include this file and add `use Thybag\SharePointAPI;` below in order the PHP SP API as before.
+ * Add backwards compatability for none composer users:
+ * Include this file and add `use Thybag\SharePointAPI;` below in order the PHP SP API as before.
  */
 
 // PSR-0 Autoloader
@@ -22,6 +22,5 @@ spl_autoload_register(function ($classname) {
 	$classname = 'lib/'.str_replace("\\", "/", $match[1])
 		. str_replace(array("\\", "_"), "/", $match[2])
 		. ".php";
-
 	include_once $classname;
 });
