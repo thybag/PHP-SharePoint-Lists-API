@@ -7,7 +7,7 @@ namespace Thybag;
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  *
  * @author Carl Saggs
- * @version 2012.12.24
+ * @version 0.6.1
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
