@@ -13,7 +13,7 @@ Known to work with: SharePoint 2007, SharePoint Online.
 Download the WSDL file for the SharePoint Lists you want to interact with. This can normally be obtained at:
     `sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL`
 
-If you are using [composer](http://getcomposer.org/), just add `[thybag/php-sharepoint-lists-api](https://packagist.org/packages/thybag/php-sharepoint-lists-api)` to your `composer.json` and run composer.
+If you are using [composer](http://getcomposer.org/), just add [thybag/php-sharepoint-lists-api](https://packagist.org/packages/thybag/php-sharepoint-lists-api) to your `composer.json` and run composer.
 
     {
         "require": {
@@ -80,7 +80,7 @@ Automatically making the attribute names lowercase can also be deactivated by us
     $sp->lowercaseIndexs(FALSE);
 
 #### Querying a list
-The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) Pseudo SQL methods.
+The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) pseudo SQL methods.
 
 If you for example wanted to query a list of pets and return all dogs below the age of 5 (sorted by age) you could use.
 
