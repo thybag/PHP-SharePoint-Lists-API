@@ -1,20 +1,32 @@
 <?php
 namespace Thybag\Auth;
 
+/**
+ * SharePointOnlineAuth
+ * Clone of the PHP SoapClient class, modified in order to allow transparent communication with
+ * the SharePoint Online Web services.
+ * 
+ * @package Thybag\Auth
+ */
 class SharePointOnlineAuth extends \SoapClient {
 
+	// Has connection beeen established
 	private $authConfigured = false;
 
+	// Override do request method
 	public function __doRequest($request, $location, $action, $version, $one_way = false) {
-		// Auth with SP online
+		
+		// Auth with SP online, in order to get required authentication cookies
 		if(!$this->authConfigured) $this->configureAuthCookies($location);
 
+		// Create Curl ready string from cookies stored in SoapClient
 		$cookie_string = '';
 		foreach($this->{'_cookies'} as $name => $c){
 			$cookie_string .= trim($name).'='.$c[0].'; ';
 		}
 		$cookie_string = substr($cookie_string, 0, -2);
 		
+		// Set base headers
 		$headers = array();
 		$headers[] = "Content-Type: text/xml;";
 
@@ -22,60 +34,73 @@ class SharePointOnlineAuth extends \SoapClient {
 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($curl, CURLOPT_POST, TRUE);
+
+        // Send request and auth cookies.
         curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
         curl_setopt($curl, CURLOPT_COOKIE, $cookie_string); 
      
+     	// Connection requires CURLOPT_SSLVERSION set to 3
         curl_setopt($curl, CURLOPT_TIMEOUT, 10);
         curl_setopt($curl, CURLOPT_SSLVERSION, 3);
-        curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-
-		curl_setopt($curl, CURLOPT_VERBOSE,FALSE);
-        curl_setopt($curl, CURLOPT_HEADER, FALSE);
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 
-        // bit of a hack for now
+        // Useful for debugging
+		curl_setopt($curl, CURLOPT_VERBOSE,FALSE);
+        curl_setopt($curl, CURLOPT_HEADER, FALSE);
+        
+
+        // SharePoint Online requires the SOAPAction header set for ADD/EDIT and DELETE Operations.
+        // Failure to have this will result in a "Security Validation exception"
+        // @see http://weblogs.asp.net/jan/archive/2009/05/25/quot-the-security-validation-for-this-page-is-invalid-quot-when-calling-the-sharepoint-web-services.aspx
         if(strpos($request, 'UpdateListItems') !== FALSE){
     		$headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
         }
 
+        // Add headers
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
+        // Init the Curl
         $response = curl_exec($curl);
         
-        if (curl_errno($curl))
-        {
-            throw new \Exception(curl_error($curl));
-        }
-
-        if($response == ''){
-        	 throw new \Exception("No XML returned");
-        }
-
+        // Throw exceptions if there are any issues
+        if (curl_errno($curl)) throw new \SoapFault(curl_error($curl));
+		if($response == '') throw new \SoapFault("No XML returned");
+     
+		// Close CURL
         curl_close($curl);
         
         // Return?
-        if (!$one_way)
-        {
-            return ($response);
-        }
+        if (!$one_way) return ($response);
+
 	}
 
+	/**
+	 * ConfigureAuthCookies
+	 * Authenticate with sharepoint online in order to get valid authentication cookies
+	 * 
+	 * @param $location - Url of sharepoint list
+	 *
+	 * More info on method:
+	 * @see http://allthatjs.com/2012/03/28/remote-authentication-in-sharepoint-online/
+	 * @see http://macfoo.wordpress.com/2012/06/23/how-to-log-into-office365-or-sharepoint-online-using-php/
+	 */
 	protected function configureAuthCookies($location){
 
-		// Get endpoint
+		// Get endpoint "https://somthing.sharepoint.com"
 		$location = parse_url($location);
 		$endpoint = 'https://'.$location['host'];
 
-		// get auth
+		// get username & password
 		$login = $this->{'_login'};
 		$password = $this->{'_password'};
 
-		// send token request
-		$xml = $this->getSecurityTokenXml($login, $password, $endpoint);
+		// Create XML security token request
+		$xml = $this->generateSecurityToken($login, $password, $endpoint);
 
+		// Send request and grab returned xml
 		$result = $this->authCurl("https://login.microsoftonline.com/extSTS.srf", $xml);
 
-		// Extract security token
+		// Extract security token from XML
 		$xml = new \DOMDocument();
 	    $xml->loadXML($result);
 	    $xpath = new \DOMXPath($xml);
@@ -85,13 +110,12 @@ class SharePointOnlineAuth extends \SoapClient {
 	        break;
 	    }
 
-	    // Get access cookies
+	    // send token to SharePoint online in order to gain authentication cookies
 	    $result = $this->authCurl($endpoint."/_forms/default.aspx?wa=wsignin1.0", $token, true);
 
 	    // Extract cookies
 	    $authCookies = array();
 	    $header_array = explode("\r\n", $result);
-
 
 	    foreach($header_array as $header) {
 	        $loop = explode(":",$header);
@@ -115,6 +139,7 @@ class SharePointOnlineAuth extends \SoapClient {
 	    	static::__setCookie($name, $content);
 	    }
 
+	    // Set this to avoid having to re-authenticate each request
 	    $this->authConfigured = true;
 	}
 	protected function authCurl($url, $payload, $header = false){
@@ -127,7 +152,7 @@ class SharePointOnlineAuth extends \SoapClient {
 	  	curl_setopt($ch, CURLOPT_SSLVERSION, 3);
 	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 	    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-	    curl_setopt($ch, CURLOPT_USERAGENT,'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0');
+	    //curl_setopt($ch, CURLOPT_USERAGENT,'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Win64; x64; Trident/5.0');
 
 	    $result = curl_exec($ch);
 
@@ -149,7 +174,7 @@ class SharePointOnlineAuth extends \SoapClient {
  * @param string $endpoint
  * @return type string
  */
-protected function getSecurityTokenXml($username, $password, $endpoint) {
+protected function generateSecurityToken($username, $password, $endpoint) {
     return <<<TOKEN
     <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
       xmlns:a="http://www.w3.org/2005/08/addressing"
