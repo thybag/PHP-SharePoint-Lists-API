@@ -2,11 +2,9 @@
 
 The **PHP SharePoint Lists API** is designed to make working with SharePoint Lists in PHP a less painful developer experience. Rather than messing around with SOAP and CAML requests, just include the SharePoint lists API in to your project and you should be good to go. This library is free for anyone to use and is licensed under the MIT license.
 
-The current version includes the ability to read, add, edit, delete and query items from existing SharePoint lists, as well as to add and remove attachments. You can also query list metadata and the list of lists.
+Using the PHP SharePoint Lists API, you can easily create, read, edit and delete from SharePoint list. The API also has support for querying list metadata and the list of lists.
 
-All methods will return an Array by default. `SetReturnType` can be used to specify that results should be returned as objects.
-
-Tested on SharePoint 2007.
+Tested against SharePoint 2007 & SharePoint Online.
 
 ### Usage Instructions
 
@@ -21,15 +19,27 @@ If you are using [composer](http://getcomposer.org/) , just add `thybag/php-shar
         }
     }
 
-If you are not using composer you can download a copy of the SharePointAPI files manually and include the SharePointAPI.php class in your project.
+If you are not using composer you can download a copy of the SharePointAPI files manually and include the top SharePointAPI.php class in your project.
 
-The script requires a user/service account with permissions to the required list in order to function.
+In order to use the PHP SharePoint Lists API< you will need a valid user/service account with the permissions to the required list. 
 
-    $sp = new \Thybag\SharepointApi('<username>', '<password>', '<path_to_WSDL>');
+For most SharePoint installtions, you can create a new instance of the API using:
 
-Or if you wish to use NTLM to authenticate:
+    use Thybag\SharePointAPI;
+    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
 
-    $sp = new \Thybag\SharepointApi('<username>', '<password>', '<path_to_WSDL>', true);
+If your installtion requires NTLM Authenication, you can instead use
+
+    use Thybag\SharePointAPI;
+    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'NTLM');
+
+SharePoint Online users must use
+
+    use Thybag\SharePointAPI;
+    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'SPONLINE');
+
+
+All methods return an Array by default. `SetReturnType` can be used to specify that results should be returned as objects instead.
 
 #### Reading from a List.
 
