@@ -132,5 +132,3 @@ class SoapClientAuth extends \SoapClient {
 		}
 	}
 }
-
-?>

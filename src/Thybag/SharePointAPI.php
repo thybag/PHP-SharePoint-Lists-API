@@ -970,5 +970,3 @@ class SharePointAPI {
 		return $id . (($title !== '') ? ';#' . $title : '');
 	}
 }
-
-?>

@@ -134,6 +134,3 @@ class StreamWrapperHttpAuth {
 		return FALSE;
 	}
 }
-
-
-?>
