@@ -47,29 +47,53 @@ All methods return an Array by default. `SetReturnType` can be used to specify t
 
 #### Reading from a List.
 
-To return all items from a list use:
+To return all items from a list use either
 
     $sp->read('<list_name>'); 
+
+or
+
+    $sp->query('<list_name>')->get();
 
 To return only the first 10 items from a list use:
 
     $sp->read('<list_name>', 10); 
 
+or
+
+    $sp->query('<list_name>')->limit(10)->get();
+
 To return all the items from a list where surname is smith use:
 
     $sp->read('<list_name>', NULL, array('surname'=>'smith')); 
+
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->get();
 
 To return the first 5 items where the surname is smith and the age is 40
 
     $sp->read('<list_name>', 5, array('surname'=>'smith','age'=>40)); 
 
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->and_where('age', '=', '40')->limit(5)->get();
+
 To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
 
     $sp->read('<list_name>', 10, array('surname'=>'smith','age'=>40),'{0FAKE-GUID001-1001001-10001}'); 
 
+or
+
+     $sp->query('<list_name>')->where('surname', '=', 'smith')->and_where('age', '=', '40')->limit(10)->using('{0FAKE-GUID001-1001001-10001}')->get();
+
 To return the first 10 items where the surname is smith, ordered by age use:
 
     $sp->read('<list_name>', 10, array('surname'=>'smith'), NULL, array('age' => 'desc')); 
+
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->limit(10)->sort('age','DESC')->get();
 
 By default list item's are returned as arrays with lower case index's. If you would prefer the results to return as object's, before invoking any read operations use:
 
@@ -89,6 +113,11 @@ If you for example wanted to query a list of pets and return all dogs below the 
 If you wanted to get the first 10 pets that were either cats or hamsters you could use:
 
     $sp->query('list of pets')->where('type','=','cat')->or_where('type','=','hamster')->limit(10)->get();
+
+If you have a set of CAML for a specific advanced query you would like to run, you can pass it to the query object using:
+
+    $sp->query('list of pets')->raw_where('<Eq><FieldRef Name="Title" /><Value Type="Text">Hello World</Value></Eq>')->limit(10)->get();
+
 
 #### Adding to a list
 
@@ -153,6 +182,16 @@ By default the method will attempt to strip out non-useful columns from the resu
 You can also now ignore "hidden" columns:
 
     $sp->readListMeta('My List', FALSE, TRUE);
+
+#### Field history /versions.
+If your list is versioned in SharePoint, you can read the versions for a specific field using:
+
+    $sp->getVersions('<list>', '<id>', '<field_name>');
+
+#### Attach a file to a SharePoint Item
+Files can be attached to SharePoint list items using:
+
+    $sp->addAttachment('<list>', '<id>', '<path_to_file>');
 
 
 ### Helper methods

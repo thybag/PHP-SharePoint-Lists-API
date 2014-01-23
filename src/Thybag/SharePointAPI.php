@@ -578,6 +578,15 @@ class SharePointAPI {
 		return $this->modifyList($list_name, $deletes, 'Delete');
 	}
 
+	/**
+	 * addAttachment
+	 * Add an attachment to a SharePoint List
+	 *
+	 * @param $list_name Name of list
+	 * @param $list_item_id ID of record to attach attachment to
+	 * @param $file_name path of file to attach
+	 * @return Array
+	 */
 	public function addAttachment ($list_name, $list_item_id, $file_name) {
 		// base64 encode file
 		$attachment = base64_encode(file_get_contents($file_name));
@@ -652,8 +661,8 @@ class SharePointAPI {
 
 	/**
 	 * lowercaseIndexs
-	 * Enable or disable automically lowercasing indexs for returned data.
-	 * (By defualt this is enabled to avoid users having to worry about the case attributers are in)
+	 * Enable or disable automatically lowercasing index's for returned data.
+	 * (By default this is enabled to avoid users having to worry about the case attributes are in)
 	 * Array or Object.
 	 *
 	 * @param $enable TRUE|FALSE
@@ -666,7 +675,7 @@ class SharePointAPI {
 	 * Query
 	 * Create a query against a list in sharepoint
 	 *
-	 * Build querys as $sp->query('my_list')->where('score','>',15)->and_where('year','=','9')->get();
+	 * Build query's as $sp->query('my_list')->where('score','>',15)->and_where('year','=','9')->get();
 	 *
 	 * @param List name / GUID number
 	 * @return \Thybag\Service\QueryObjectService
@@ -714,8 +723,8 @@ class SharePointAPI {
 
 	/**
 	 * xmlHandler
-	 * Transform the XML returned from SOAP in to a useful datastructure.
-	 * By Defualt all sharepoint items will be represented as arrays.
+	 * Transform the XML returned from SOAP in to a useful data structure.
+	 * By Default all sharepoint items will be represented as arrays.
 	 * Use setReturnType('object') to have them returned as objects.
 	 *
 	 * @param $rawXml XML DATA returned by SOAP
@@ -726,7 +735,7 @@ class SharePointAPI {
 		$results = $this->getArrayFromElementsByTagName($rawXml, '#RowsetSchema', '*');
 		$resultArray = array();
 
-		// Proccess Object and return a nice clean assoaitive array of the results
+		// Proccess Object and return a nice clean associative array of the results
 		foreach ($results as $i => $result) {
 			$resultArray[$i] = array();
 			foreach ($result->attributes as $attribute => $value) {
@@ -827,11 +836,11 @@ class SharePointAPI {
 	/**
 	 * modifyList
 	 * Perform an action on a sharePoint list to either update or add content to it.
-	 * This method will use prepBatch to generate the batch xml, then call the sharepoint SOAP API with this data
+	 * This method will use prepBatch to generate the batch xml, then call the SharePoint SOAP API with this data
 	 * to apply the changes.
 	 *
 	 * @param $list_name SharePoint List to update
-	 * @param $items Arrary of new items or item changesets.
+	 * @param $items Array of new items or item changesets.
 	 * @param $method New/Update/Delete
 	 * @return Array|Object
 	 */
@@ -866,10 +875,10 @@ class SharePointAPI {
 
 	/**
 	 * prepBatch
-	 * Convert an array of new items or changesets in to XML commands to be run on
+	 * Convert an array of new items or change sets in to XML commands to be run on
 	 * the sharepoint SOAP API.
 	 *
-	 * @param $items array of new items/changesets
+	 * @param $items array of new items/change sets
 	 * @param $method New/Update/Delete
 	 * @return XML
 	 */
@@ -950,9 +959,9 @@ class SharePointAPI {
 	 * dateTime: Helper method
 	 * Format date for use by sharepoint
 	 * @param $date (Date to be handled by strtotime)
-	 * @param $timestamp. If first parameter is unix timestamp, set this to true
+	 * @param $timestamp. If first parameter is a unix timestamp, set this to true
 	 *
-	 *@return date sharepoint will accept
+	 *@return date SharePoint will accept
 	 */
 	public static function dateTime ($date, $timestamp = FALSE) {
 		return ($timestamp) ? date('c',$date) : date('c', strtotime($date));
@@ -989,7 +998,7 @@ class SharePointAPI {
 	        </GetVersionCollection>
 	    ';
 
-	    // Attempt to query Sharepoint
+	    // Attempt to query SharePoint
 	    try{
 	        $rawxml = $this->soapClient->GetVersionCollection(new \SoapVar($CAML, XSD_ANYXML))->GetVersionCollectionResult->any;
 	    }catch(\SoapFault $fault){
