@@ -53,10 +53,10 @@ class QueryObjectService {
 
 	/**
 	 * Where
-	 * Perform inital where action
+	 * Perform initial where action
 	 *
 	 * @param $col column to test
-	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
@@ -69,7 +69,7 @@ class QueryObjectService {
 	 * Perform additional and where actions
 	 *
 	 * @param $col column to test
-	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
@@ -82,7 +82,7 @@ class QueryObjectService {
 	 * Perform additional or where actions
 	 *
 	 * @param $col column to test
-	 * @param $test comparsion type (=,!+,<,>)
+	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
 	 * @return Ref to self
 	 */
@@ -91,8 +91,24 @@ class QueryObjectService {
 	}
 
 	/**
+	 * raw_where
+	 * Perform query using user provided WHERE CAML (XMl contained between the <Where></Where> tags)
+	 * This can be used when a user needs to perform queries to complex to be defined using the standard methods
+	 *
+	 * @param $caml - RAW CAML
+	 * @return Ref to self
+	 * @throws \Exception - Thrown if standard where states are already in use.
+	 */
+	public function raw_where ($caml) {
+		// Ensure standard query builder isn't in use
+		if($this->where_caml != '') throw \Exception("where_raw cannot be used in conjunction with the standard and_where/or_where functionality");
+		$this->where_caml = $caml;
+		return $this;
+	}
+
+	/**
 	 * Limit
-	 * Specify maxium amount of items to return. (if not set, default is used.)
+	 * Specify maximum amount of items to return. (if not set, default is used.)
 	 *
 	 * @param $limit number of items to return
 	 * @return Ref to self
@@ -131,7 +147,7 @@ class QueryObjectService {
 
 	/**
 	 * get
-	 * Runs the specified query and returns a useable result.
+	 * Runs the specified query and returns a usable result.
 	 * @return Array: Sharepoint List Data
 	 */
 	public function get () {
@@ -144,15 +160,15 @@ class QueryObjectService {
 	 *
 	 * @param	$rel	Relation AND/OR etc
 	 * @param	$col	column to test
-	 * @param	$test	comparsion type (=,!+,<,>)
+	 * @param	$test	comparison type (=,!+,<,>)
 	 * @param	$value	value to test with
 	 * @return	Ref to self
-	 * @throws	\Exception	Thrown if $test is unreconized
+	 * @throws	\Exception	Thrown if $test is unrecognized
 	 */
 	private function addQueryLine ($rel, $col, $test, $value) {
 		// Check tests are usable
 		if (!in_array($test, array('!=', '>=', '<=', '<', '>', '='))) {
-			throw new \Exception('Unreconized query parameter. Please use <,>,=,>=,<= or !=');
+			throw new \Exception('Unrecognized query parameter. Please use <,>,=,>=,<= or !=');
 		}
 
 		// Make sure $rel is lower-case
@@ -200,5 +216,3 @@ class QueryObjectService {
 		return $xml;
 	}
 }
-
-?>
