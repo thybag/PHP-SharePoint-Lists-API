@@ -1,8 +1,8 @@
 {
     "name": "thybag/php-sharepoint-lists-api",
-    "version": "0.5",
+    "version": "0.6.1",
     "type": "library",
-    "description": "A simple PHP API to make working with SharePoint lists easy",
+    "description": "A simple PHP API to make working with SharePoint lists easy.",
     "homepage": "https://github.com/thybag/PHP-SharePoint-Lists-API",
     "license": "MIT",
     "authors": [
@@ -12,6 +12,8 @@
         }
     ],
     "autoload": {
-        "classmap": ["SharePointAPI.php", "SoapClientAuth.php"]
+		"psr-0": {
+			"Thybag\\SharePointAPI" : "src/"
+		}
     }
 }

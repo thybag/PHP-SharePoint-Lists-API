@@ -2,18 +2,18 @@
 
 The **PHP SharePoint Lists API** is designed to make working with SharePoint Lists in PHP a less painful developer experience. Rather than messing around with SOAP and CAML requests, just include the SharePoint lists API in to your project and you should be good to go. This library is free for anyone to use and is licensed under the MIT license.
 
-The current version includes the ability to read, add, edit, delete and query items from existing SharePoint lists, as well as to add and remove attachments. You can also query list metadata and the list of lists.
+Using the PHP SharePoint Lists API, you can easily create, read, edit and delete from SharePoint list. The API also has support for querying list metadata and the list of lists.
 
-All methods will return an Array by default. `SetReturnType` can be used to specify that results should be returned as objects.
-
-Tested on SharePoint 2007.
+Known to work with: SharePoint 2007 and SharePoint online (experimental).
 
 ### Usage Instructions
+
+#### Installation
 
 Download the WSDL file for the SharePoint Lists you want to interact with. This can normally be obtained at:
     `sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL`
 
-If you are using [composer](http://getcomposer.org/) , just add `thybag/php-sharepoint-lists-api` to your `composer.json` and run composer.
+If you are using [composer](http://getcomposer.org/), just add [thybag/php-sharepoint-lists-api](https://packagist.org/packages/thybag/php-sharepoint-lists-api) to your `composer.json` and run composer.
 
     {
         "require": {
@@ -21,41 +21,87 @@ If you are using [composer](http://getcomposer.org/) , just add `thybag/php-shar
         }
     }
 
-If you are not using composer you can download a copy of the SharePointAPI files manually and include the SharePointAPI.php class in your project.
+If you are not using composer you can download a copy of the SharePointAPI files manually and include the top "SharePointAPI.php" class in your project.
 
-The script requires a user/service account with permissions to the required list in order to function.
+#### Creating SharePointAPI object
 
+In order to use the PHP SharePoint Lists API you will need a valid user/service account with the permissions to the required list. 
+
+For most SharePoint installations, you can create a new instance of the API using:
+
+    use Thybag\SharePointAPI;
     $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>');
 
-Or if you wish to use NTLM to authenticate:
+If your installation requires NTLM Authentication, you can instead use:
 
-    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', true);
+    use Thybag\SharePointAPI;
+    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'NTLM');
+
+SharePoint Online users must use:
+
+    use Thybag\SharePointAPI;
+    $sp = new SharePointAPI('<username>', '<password>', '<path_to_WSDL>', 'SPONLINE');
+
+
+All methods return an Array by default. `SetReturnType` can be used to specify that results should be returned as objects instead.
 
 #### Reading from a List.
 
-To return all items from a list use:
+###### To return all items from a list use either
 
     $sp->read('<list_name>'); 
 
-To return only the first 10 items from a list use:
+or
+
+    $sp->query('<list_name>')->get();
+
+
+###### To return only the first 10 items from a list use:
 
     $sp->read('<list_name>', 10); 
 
-To return all the items from a list where surname is smith use:
+or
+
+    $sp->query('<list_name>')->limit(10)->get();
+
+
+###### To return all the items from a list where surname is smith use:
 
     $sp->read('<list_name>', NULL, array('surname'=>'smith')); 
 
-To return the first 5 items where the surname is smith and the age is 40
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->get();
+
+
+###### To return the first 5 items where the surname is smith and the age is 40
 
     $sp->read('<list_name>', 5, array('surname'=>'smith','age'=>40)); 
 
-To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->and_where('age', '=', '40')->limit(5)->get();
+
+
+
+###### To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
 
     $sp->read('<list_name>', 10, array('surname'=>'smith','age'=>40),'{0FAKE-GUID001-1001001-10001}'); 
 
-To return the first 10 items where the surname is smith, ordered by age use:
+or
+
+     $sp->query('<list_name>')->where('surname', '=', 'smith')->and_where('age', '=', '40')->limit(10)->using('{0FAKE-GUID001-1001001-10001}')->get();
+
+
+###### To return the first 10 items where the surname is smith, ordered by age use:
 
     $sp->read('<list_name>', 10, array('surname'=>'smith'), NULL, array('age' => 'desc')); 
+
+or
+
+    $sp->query('<list_name>')->where('surname', '=', 'smith')->limit(10)->sort('age','DESC')->get();
+
+
 
 By default list item's are returned as arrays with lower case index's. If you would prefer the results to return as object's, before invoking any read operations use:
 
@@ -66,7 +112,7 @@ Automatically making the attribute names lowercase can also be deactivated by us
     $sp->lowercaseIndexs(FALSE);
 
 #### Querying a list
-The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) Pseudo SQL methods.
+The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) pseudo SQL methods.
 
 If you for example wanted to query a list of pets and return all dogs below the age of 5 (sorted by age) you could use.
 
@@ -75,6 +121,11 @@ If you for example wanted to query a list of pets and return all dogs below the 
 If you wanted to get the first 10 pets that were either cats or hamsters you could use:
 
     $sp->query('list of pets')->where('type','=','cat')->or_where('type','=','hamster')->limit(10)->get();
+
+If you have a set of CAML for a specific advanced query you would like to run, you can pass it to the query object using:
+
+    $sp->query('list of pets')->raw_where('<Eq><FieldRef Name="Title" /><Value Type="Text">Hello World</Value></Eq>')->limit(10)->get();
+
 
 #### Adding to a list
 
@@ -106,7 +157,7 @@ When using updateMultiple every item MUST have an ID.
 
 #### Deleting Rows
 
-In order to delete a rowq, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
+In order to delete a row, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
 
     $sp->delete('<list_name>', '5');
 
@@ -123,12 +174,12 @@ want to perform multiple actions on the same list. Crud methods do not require a
     $list->create(array( 'id'=>1, 'name'=>'Fred' ));
 
 #### List all Lists.
-You can get a full listing of all avaiable lists within the connected sharepoint subsite by calling:
+You can get a full listing of all available lists within the connected SharePoint subsite by calling:
 
     $sp->getLists();
 
 #### List metaData.
-You can access a lists meta data (Column configurtion for example) by calling
+You can access a lists meta data (Column configuration for example) by calling
 
     $sp->readListMeta('My List');
 
@@ -136,9 +187,19 @@ By default the method will attempt to strip out non-useful columns from the resu
 
     $sp->readListMeta('My List',FALSE);
 
-You can also now ignore "hidden" colums:
+You can also now ignore "hidden" columns:
 
     $sp->readListMeta('My List', FALSE, TRUE);
+
+#### Field history / versions.
+If your list is versioned in SharePoint, you can read the versions for a specific field using:
+
+    $sp->getVersions('<list>', '<id>', '<field_name>');
+
+#### Attach a file to a SharePoint list item
+Files can be attached to SharePoint list items using:
+
+    $sp->addAttachment('<list>', '<id>', '<path_to_file>');
 
 
 ### Helper methods
@@ -149,11 +210,11 @@ The PHP SharePoint API contains a number of helper methods to make it easier to 
 
 The dataTime method can either be passed a text based date
 
-     $date = SharePointAPI::dateTime("2012-12-21");
+     $date = \Thybag\SharepointApi::dateTime("2012-12-21");
 
 Or a unix timestamp
 
-    $date = SharePointAPI::dateTime(time(), true);
+    $date = \Thybag\SharepointApi::dateTime(time(), true);
 
 And will return a value which can be stored in to SharePoints DateTime fields without issue.
 
@@ -161,11 +222,11 @@ And will return a value which can be stored in to SharePoints DateTime fields wi
 
 The lookup data type in SharePoint is for fields that reference a row in another list. In order to correctly populate these values you will need to know the ID of the row the value needs to reference.
 
-    $value = SharePointAPI::lookup('3','Pepperoni Pizza');
+    $value = \Thybag\SharepointApi::lookup('3','Pepperoni Pizza');
 
-If you do not know the name/title of the value you are storing the method will work fine with just an ID (which sharepoint will also accept directly)
+If you do not know the name/title of the value you are storing the method will work fine with just an ID (which SharePoint will also accept directly)
     
-    $value = SharePointAPI::lookup('3');
+    $value = \Thybag\SharepointApi::lookup('3');
 
 #### Magic Lookup
 
