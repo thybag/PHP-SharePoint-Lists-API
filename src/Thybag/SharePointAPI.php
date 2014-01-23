@@ -963,10 +963,58 @@ class SharePointAPI {
 	 * Format data to be used in lookup datatype
 	 * @param $id ID of item in other table
 	 * @param $title Title of item in other table (this is optional as sharepoint doesnt complain if its not provided)
-	 *
 	 * @return string "lookup" value sharepoint will accept
 	 */
 	public static function lookup ($id, $title = '') {
 		return $id . (($title !== '') ? ';#' . $title : '');
+	}
+
+	/**
+	 * getVersions
+	 * Get previous versions of field contents
+	 *
+	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
+	 * @param $list Name or GUID of list
+	 * @param $id ID of item to find versions for
+	 * @param $field name of column to get versions for
+	 * @return array | object
+	 */
+	public function getVersions($list, $id, $field){
+	    //Ready XML
+	    $CAML = '
+	        <GetVersionCollection xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+	            <strlistID>'.$list.'</strlistID>
+	            <strlistItemID>'.$id.'</strlistItemID>
+	            <strFieldName>'.$field.'</strFieldName>
+	        </GetVersionCollection>
+	    ';
+
+	    // Attempt to query Sharepoint
+	    try{
+	        $rawxml = $this->soapClient->GetVersionCollection(new \SoapVar($CAML, XSD_ANYXML))->GetVersionCollectionResult->any;
+	    }catch(\SoapFault $fault){
+	        $this->onError($fault);
+	    }
+
+	    // Load XML in to DOM document and grab all Fields
+        $dom = new \DOMDocument();
+        $dom->loadXML($rawxml);
+        $nodes = $dom->getElementsByTagName("Version");
+
+        // Parse results
+        $results = array();
+        // Format data in to array or object
+        foreach ($nodes as $counter => $node) {
+            //Get Attributes
+            foreach ($node->attributes as $attribute => $value) {
+                $results[$counter][strtolower($attribute)] = $node->getAttribute($attribute);
+            }
+            //Make object if needed
+            if ($this->returnType === 1) settype($results[$counter], "object");
+        }
+        // Add error array if stuff goes wrong.
+        if (!isset($results)) $results = array('warning' => 'No data returned.');
+
+	    return $results;
 	}
 }
