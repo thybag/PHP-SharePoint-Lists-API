@@ -332,9 +332,6 @@ class SharePointAPI {
 
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
-			// Empty inner_xml
-			$inner_xml = '';
-
 			// Attempt to hide none useful feilds (disable by setting second param to FALSE)
 			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === FALSE))) {
 				continue;
@@ -345,12 +342,6 @@ class SharePointAPI {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
-
-			// Get contents (Raw xml)
-			foreach ($node->childNodes as $childNode) {
-				$inner_xml .= $node->ownerDocument->saveXml($childNode);
-			}
-			$results[$counter]['value'] = $inner_xml;
 
 			// Make object if needed
 			if ($this->returnType === 1) {
@@ -395,19 +386,30 @@ class SharePointAPI {
 		// Create Query XML is query is being used
 		$xml_options = '';
 		$xml_query   = '';
+		$fields_xml = '';
 
 		// Setup Options
 		if ($query instanceof Service\QueryObjectService) {
 			$xml_query = $query->getCAML();
 		} else {
-			if (!is_null($view)) {
-				$xml_options .= '<viewName>' . $view . '</viewName>';
-			}
 			if (!is_null($query)) {
 				$xml_query .= $this->whereXML($query); // Build Query
 			}
 			if (!is_null($sort)) {
 				$xml_query .= $this->sortXML($sort);
+			}
+		}
+
+		// Add view or fields
+		if (!is_null($view)) {
+			if(is_array($view)){
+				// Convert fields to array
+				foreach($view as $field) $fields_xml .= '<FieldRef Name="'.$field.'" />';
+				// wrap tags
+				$fields_xml = '<viewFields><ViewFields>'.$fields_xml.'</ViewFields></viewFields>';  
+			}else{
+				// add view
+				$xml_options .= '<viewName>' . $view . '</viewName>';
 			}
 		}
 
@@ -430,6 +432,7 @@ class SharePointAPI {
 						' . $options . '
 					</QueryOptions>
 				</queryOptions>
+				'.$fields_xml.'
 			</GetListItems>';
 
 		// Ready XML
