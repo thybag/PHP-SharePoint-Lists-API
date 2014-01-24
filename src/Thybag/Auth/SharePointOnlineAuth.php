@@ -55,8 +55,8 @@ class SharePointOnlineAuth extends \SoapClient {
 		$response = curl_exec($curl);
 
 		// Throw exceptions if there are any issues
-		if (curl_errno($curl)) throw new \SoapFault(curl_errno($curl), curl_error($curl));
-		if ($response == '') throw new \SoapFault("No XML returned", "No XML returned");
+		if (curl_errno($curl)) throw new \SoapFault('Receiver', curl_error($curl));
+		if ($response == '') throw new \SoapFault('Receiver', "No XML returned");
 
 		// Close CURL
 		curl_close($curl);
@@ -176,7 +176,7 @@ class SharePointOnlineAuth extends \SoapClient {
 
 		// catch error
 		if($result === false) {
-			throw new \SoapFault(curl_errno($ch), 'Curl error: ' . curl_error($ch));
+			throw new \SoapFault('Sender', 'Curl error: ' . curl_error($ch));
 		}
 
 		curl_close($ch);
