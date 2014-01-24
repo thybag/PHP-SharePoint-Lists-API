@@ -7,7 +7,7 @@ namespace Thybag;
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  *
  * @author Carl Saggs
- * @version 0.6.1
+ * @version 0.6.2
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -1035,7 +1035,6 @@ class SharePointAPI {
 	 * getItemVersions
 	 * Get previous versions of an item
 	 *
-	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
 	 * @param $list Name or GUID of list
 	 * @param $id ID of item to find versions for
 	 * @return array | object
@@ -1077,7 +1076,6 @@ class SharePointAPI {
 	 * getVersions
 	 * Get previous versions of an item or field
 	 *
-	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
 	 * @param $list Name or GUID of list
 	 * @param $id ID of item to find versions for
 	 * @param $field optional name of column to get versions for
