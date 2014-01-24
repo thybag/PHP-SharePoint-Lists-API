@@ -332,9 +332,6 @@ class SharePointAPI {
 
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
-			// Empty inner_xml
-			$inner_xml = '';
-
 			// Attempt to hide none useful feilds (disable by setting second param to FALSE)
 			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === FALSE))) {
 				continue;
@@ -345,12 +342,6 @@ class SharePointAPI {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
-
-			// Get contents (Raw xml)
-			foreach ($node->childNodes as $childNode) {
-				$inner_xml .= $node->ownerDocument->saveXml($childNode);
-			}
-			$results[$counter]['value'] = $inner_xml;
 
 			// Make object if needed
 			if ($this->returnType === 1) {
@@ -395,19 +386,30 @@ class SharePointAPI {
 		// Create Query XML is query is being used
 		$xml_options = '';
 		$xml_query   = '';
+		$fields_xml = '';
 
 		// Setup Options
 		if ($query instanceof Service\QueryObjectService) {
 			$xml_query = $query->getCAML();
 		} else {
-			if (!is_null($view)) {
-				$xml_options .= '<viewName>' . $view . '</viewName>';
-			}
 			if (!is_null($query)) {
 				$xml_query .= $this->whereXML($query); // Build Query
 			}
 			if (!is_null($sort)) {
 				$xml_query .= $this->sortXML($sort);
+			}
+		}
+
+		// Add view or fields
+		if (!is_null($view)) {
+			if(is_array($view)){
+				// Convert fields to array
+				foreach($view as $field) $fields_xml .= '<FieldRef Name="'.$field.'" />';
+				// wrap tags
+				$fields_xml = '<viewFields><ViewFields>'.$fields_xml.'</ViewFields></viewFields>';  
+			}else{
+				// add view
+				$xml_options .= '<viewName>' . $view . '</viewName>';
 			}
 		}
 
@@ -430,6 +432,7 @@ class SharePointAPI {
 						' . $options . '
 					</QueryOptions>
 				</queryOptions>
+				'.$fields_xml.'
 			</GetListItems>';
 
 		// Ready XML
@@ -979,7 +982,7 @@ class SharePointAPI {
 	}
 
 	/**
-	 * getVersions
+	 * getFieldVersions
 	 * Get previous versions of field contents
 	 *
 	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
@@ -988,7 +991,7 @@ class SharePointAPI {
 	 * @param $field name of column to get versions for
 	 * @return array | object
 	 */
-	public function getVersions($list, $id, $field){
+	public function getFieldVersions ($list, $id, $field) {
 	    //Ready XML
 	    $CAML = '
 	        <GetVersionCollection xmlns="http://schemas.microsoft.com/sharepoint/soap/">
@@ -1025,5 +1028,65 @@ class SharePointAPI {
         if (!isset($results)) $results = array('warning' => 'No data returned.');
 
 	    return $results;
+	}
+	
+	/**
+	 * getItemVersions
+	 * Get previous versions of an item
+	 *
+	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
+	 * @param $list Name or GUID of list
+	 * @param $id ID of item to find versions for
+	 * @return array | object
+	 */
+	public function getItemVersions ($list, $id, $exclude_hidden = true) {
+	    $fields = $this->readListMeta($list, $exclude_hidden);
+	    
+        // Parse results
+        $results = array();
+        // Format data in to array or object
+        foreach ($fields as $counter => $field) {
+            // Modified always returns an error
+            if($field['name'] == 'Modified') { continue; }
+            
+            // Get all the fields
+            $field_versions = $this->getFieldVersions($list, $id, $field['name']);
+            
+            // Get the versions for each field
+            if(sizeof($field_versions) !== 0) {
+                foreach($field_versions as $key => $value) {
+                    if($this->lower_case_indexs) {
+                        $results[$key][strtolower($field['name'])] = $value[strtolower($field['name'])];
+                    } else {
+                        $results[$key][$field['name']] = $value[$field['name']];
+                    }
+                }
+                //Make object if needed
+                if ($this->returnType === 1) settype($results[$counter], "object");
+            }
+		}
+
+        // Add error array if stuff goes wrong.
+        if (!isset($results)) $results = array('warning' => 'No data returned.');
+
+	    return $results;
+	}
+	
+	/**
+	 * getVersions
+	 * Get previous versions of an item or field
+	 *
+	 * @see https://github.com/thybag/PHP-SharePoint-Lists-API/issues/6#issuecomment-13793688 by TimRainey 
+	 * @param $list Name or GUID of list
+	 * @param $id ID of item to find versions for
+	 * @param $field optional name of column to get versions for
+	 * @return array | object
+	 */
+	public function getVersions ($list, $id, $field = null, $exclude_hidden = true) {
+	    if($field === null) {
+    	    return $this->getItemVersions($list, $id, $exclude_hidden);
+	    } else {
+	        return $this->getFieldVersions($list, $id, $field);
+	    }
 	}
 }
