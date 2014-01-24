@@ -259,12 +259,12 @@ class QueryObjectService {
 	 * Combine and return the raw CAML data for the request options 
 	 * @return CAML Code (XML)
 	 */
-	public function getOptionsCAML () {
+	public function getOptionCAML () {
 
 		$xml = '';
-		
+
 		// if fields are specified
-		if(sizeof($this->fields) > 0){
+		if(sizeof($this->fields) > 0) {
 			$xml .= $this->api->viewFieldsXML($this->fields);
 		}
 		
