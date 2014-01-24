@@ -152,7 +152,7 @@ class QueryObjectService {
 
 	/**
 	 * fields
-	 * array of fields
+	 * array of fields to include in results
 	 *
 	 * @param $fields array
 	 * @return Ref to self
@@ -162,6 +162,22 @@ class QueryObjectService {
 		return $this;
 	}
 	public function columns ($fields) { return $this->fields($fields); }
+
+	/**
+	 * all_fields
+	 * Attempt to include all fields row has within result
+	 *
+	 * @param $exclude_hidden to to false to include hidden fields
+	 * @return Ref to self
+	 */
+	public function all_fields($exclude_hidden = true){
+		$fields = $this->api->readListMeta($this->list_name, $exclude_hidden);
+		foreach ($fields as $field) {
+			$this->fields[] = $field['name'];
+		}
+		return $this;
+	}
+	public function all_columns($exclude_hidden = true){ return $this->all_fields($exclude_hidden); }
 
 	/**
 	 * get
