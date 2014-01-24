@@ -391,25 +391,24 @@ class SharePointAPI {
 		// Setup Options
 		if ($query instanceof Service\QueryObjectService) {
 			$xml_query = $query->getCAML();
+			$xml_options = $query->getOptionCAML();
 		} else {
+
 			if (!is_null($query)) {
 				$xml_query .= $this->whereXML($query); // Build Query
 			}
 			if (!is_null($sort)) {
-				$xml_query .= $this->sortXML($sort);
+				$xml_query .= $this->sortXML($sort);// add sort
 			}
-		}
 
-		// Add view or fields
-		if (!is_null($view)) {
-			if(is_array($view)){
-				// Convert fields to array
-				foreach($view as $field) $fields_xml .= '<FieldRef Name="'.$field.'" />';
-				// wrap tags
-				$fields_xml = '<viewFields><ViewFields>'.$fields_xml.'</ViewFields></viewFields>';  
-			}else{
-				// add view
-				$xml_options .= '<viewName>' . $view . '</viewName>';
+			// Add view or fields
+			if (!is_null($view)){
+				// array, fields have been specified
+				if(is_array($view)){
+					$xml_options .= $this->viewFieldsXML($view);
+				}else{
+					$xml_options .= '<viewName>' . $view . '</viewName>';
+				}
 			}
 		}
 
@@ -419,8 +418,8 @@ class SharePointAPI {
 		}
 
 		/*
-		 * Setup basic XML for quering a sharepoint list.
-		 * If rowLimit is not provided sharepoint will defualt to a limit of 100 items.
+		 * Setup basic XML for querying a SharePoint list.
+		 * If rowLimit is not provided SharePoint will default to a limit of 100 items.
 		 */
 		$CAML = '
 			<GetListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
@@ -432,14 +431,13 @@ class SharePointAPI {
 						' . $options . '
 					</QueryOptions>
 				</queryOptions>
-				'.$fields_xml.'
 			</GetListItems>';
 
 		// Ready XML
 		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
 		$result = NULL;
 
-		// Attempt to query Sharepoint
+		// Attempt to query SharePoint
 		try {
 			$result = $this->xmlHandler($this->soapClient->GetListItems($xmlvar)->GetListItemsResult->any);
 		} catch (\SoapFault $fault) {
@@ -452,7 +450,7 @@ class SharePointAPI {
 
 	/**
 	 * ReadFromFolder
-	 * Use's raw CAML to query sharepoint data from a folder
+	 * Uses raw CAML to query sharepoint data from a folder
 	 *
 	 * @param String $listName
 	 * @param String $folderName
@@ -473,7 +471,7 @@ class SharePointAPI {
 	 * Create new item in a sharepoint list
 	 *
 	 * @param String $list_name Name of List
-	 * @param Array $data Assosative array describing data to store
+	 * @param Array $data Associative array describing data to store
 	 * @return Array
 	 */
 	public function write ($list_name, array $data) {
@@ -489,7 +487,7 @@ class SharePointAPI {
 	 * Batch create new items in a sharepoint list
 	 *
 	 * @param String $list_name Name of List
-	 * @param Array of arrays Assosative array's describing data to store
+	 * @param Array of arrays Associative array's describing data to store
 	 * @return Array
 	 */
 	public function writeMultiple ($list_name, array $items) {
@@ -502,11 +500,11 @@ class SharePointAPI {
 
 	/**
 	 * Update
-	 * Update/Modifiy an existing list item.
+	 * Update/Modify an existing list item.
 	 *
 	 * @param String $list_name Name of list
 	 * @param int $ID ID of item to update
-	 * @param Array $data Assosative array of data to change.
+	 * @param Array $data Associative array of data to change.
 	 * @return Array
 	 */
 	public function update ($list_name, $ID, array $data) {
@@ -520,7 +518,7 @@ class SharePointAPI {
 
 	/**
 	 * UpdateMultiple
-	 * Batch Update/Modifiy existing list item's.
+	 * Batch Update/Modify existing list item's.
 	 *
 	 * @param String $list_name Name of list
 	 * @param Array of arrays of assosative array of data to change. Each item MUST include an ID field.
@@ -576,7 +574,6 @@ class SharePointAPI {
 			$deletes[] = $delete;
 		}
 
-
 		// Return a XML as nice clean Array
 		return $this->modifyList($list_name, $deletes, 'Delete');
 	}
@@ -614,8 +611,16 @@ class SharePointAPI {
 
 		// Return true on success
 		return true;
-	}
+	}	
 
+	/**
+	 * getAttachment
+	 * Return an attachment from a SharePoint list item
+	 *
+	 * @param $list_name Name of list
+	 * @param $list_item_id ID of record item is attached to
+	 * @return Array of attachment urls
+	 */
 	public function getAttachments ($list_name, $list_item_id) {
 		// Wrap in CAML
 		$CAML = '
@@ -837,6 +842,23 @@ class SharePointAPI {
 	}
 
 	/**
+	 * view Field sXML
+	 * Generates XML for specifying fields to return
+	 *
+	 * @param Array $fields to include
+	 * @return XML DATA
+	 */
+	public function viewFieldsXML(array $fields){
+		$xml = '';
+		// Convert fields to array
+		foreach($fields as $field){
+			$xml .= '<FieldRef Name="'.$field.'" />';
+		} 
+		// wrap tags
+		return  '<viewFields><ViewFields>'.$xml.'</ViewFields></viewFields>';  
+	}
+
+	/**
 	 * modifyList
 	 * Perform an action on a sharePoint list to either update or add content to it.
 	 * This method will use prepBatch to generate the batch xml, then call the SharePoint SOAP API with this data
@@ -974,7 +996,7 @@ class SharePointAPI {
 	 * lookup: Helper method
 	 * Format data to be used in lookup datatype
 	 * @param $id ID of item in other table
-	 * @param $title Title of item in other table (this is optional as sharepoint doesnt complain if its not provided)
+	 * @param $title Title of item in other table (this is optional as sharepoint doesn't complain if its not provided)
 	 * @return string "lookup" value sharepoint will accept
 	 */
 	public static function lookup ($id, $title = '') {
