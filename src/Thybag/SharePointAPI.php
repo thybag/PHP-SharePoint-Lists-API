@@ -395,19 +395,30 @@ class SharePointAPI {
 		// Create Query XML is query is being used
 		$xml_options = '';
 		$xml_query   = '';
+		$fields_xml = '';
 
 		// Setup Options
 		if ($query instanceof Service\QueryObjectService) {
 			$xml_query = $query->getCAML();
 		} else {
-			if (!is_null($view)) {
-				$xml_options .= '<viewName>' . $view . '</viewName>';
-			}
 			if (!is_null($query)) {
 				$xml_query .= $this->whereXML($query); // Build Query
 			}
 			if (!is_null($sort)) {
 				$xml_query .= $this->sortXML($sort);
+			}
+		}
+
+		// Add view or fields
+		if (!is_null($view)) {
+			if(is_array($view)){
+				// Convert fields to array
+				foreach($view as $field) $fields_xml .= '<FieldRef Name="'.$field.'" />';
+				// wrap tags
+				$fields_xml = '<viewFields><ViewFields>'.$fields_xml.'</ViewFields></viewFields>';  
+			}else{
+				// add view
+				$xml_options .= '<viewName>' . $view . '</viewName>';
 			}
 		}
 
@@ -430,6 +441,7 @@ class SharePointAPI {
 						' . $options . '
 					</QueryOptions>
 				</queryOptions>
+				'.$fields_xml.'
 			</GetListItems>';
 
 		// Ready XML

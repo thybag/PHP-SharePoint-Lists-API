@@ -40,6 +40,11 @@ class QueryObjectService {
 	private $view = NULL;
 
 	/**
+	 * SharePoint API fields
+	 */
+	private $fields = array();
+
+	/**
 	 * Construct
 	 * Setup new query Object
 	 *
@@ -146,12 +151,29 @@ class QueryObjectService {
 	}
 
 	/**
+	 * fields
+	 * array of fields
+	 *
+	 * @param $fields array
+	 * @return Ref to self
+	 */
+	public function fields (array $fields) {
+		$this->fields = $fields;
+		return $this;
+	}
+	public function columns ($fields) { return $this->fields($fields); }
+
+	/**
 	 * get
 	 * Runs the specified query and returns a usable result.
-	 * @return Array: Sharepoint List Data
+	 * @return Array: SharePoint List Data
 	 */
 	public function get () {
-		return $this->api->read($this->list_name, $this->limit, $this, $this->view);
+
+		// String = view, array = specific fields
+		$view = (sizeof($this->fields) === 0) ? $this->view : $this->fields;
+		
+		return $this->api->read($this->list_name, $this->limit, $this, $view);
 	}
 
 	/**
