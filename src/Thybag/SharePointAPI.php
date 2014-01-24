@@ -1029,6 +1029,7 @@ class SharePointAPI {
 
 	    return $results;
 	}
+    public function getColumnVersions ($list, $id, $field) { return $this->getFieldVersions($list, $id, $field); }
 	
 	/**
 	 * getItemVersions
