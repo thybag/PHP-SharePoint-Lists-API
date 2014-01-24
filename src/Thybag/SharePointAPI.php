@@ -332,9 +332,6 @@ class SharePointAPI {
 
 		// Format data in to array or object
 		foreach ($nodes as $counter => $node) {
-			// Empty inner_xml
-			$inner_xml = '';
-
 			// Attempt to hide none useful feilds (disable by setting second param to FALSE)
 			if ($hideInternal && ($node->getAttribute('Type') == 'Lookup' || $node->getAttribute('Type') == 'Computed' || ($node->getAttribute('Hidden') == 'TRUE' && $ignoreHiddenAttribute === FALSE))) {
 				continue;
@@ -345,12 +342,6 @@ class SharePointAPI {
 				$idx = ($this->lower_case_indexs) ? strtolower($attribute) : $attribute;
 				$results[$counter][$idx] = $node->getAttribute($attribute);
 			}
-
-			// Get contents (Raw xml)
-			foreach ($node->childNodes as $childNode) {
-				$inner_xml .= $node->ownerDocument->saveXml($childNode);
-			}
-			$results[$counter]['value'] = $inner_xml;
 
 			// Make object if needed
 			if ($this->returnType === 1) {
