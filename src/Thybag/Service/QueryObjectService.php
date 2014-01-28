@@ -40,6 +40,11 @@ class QueryObjectService {
 	private $view = NULL;
 
 	/**
+	 * SharePoint API fields
+	 */
+	private $fields = array();
+
+	/**
 	 * Construct
 	 * Setup new query Object
 	 *
@@ -146,12 +151,45 @@ class QueryObjectService {
 	}
 
 	/**
+	 * fields
+	 * array of fields to include in results
+	 *
+	 * @param $fields array
+	 * @return Ref to self
+	 */
+	public function fields (array $fields) {
+		$this->fields = $fields;
+		return $this;
+	}
+	public function columns ($fields) { return $this->fields($fields); }
+
+	/**
+	 * all_fields
+	 * Attempt to include all fields row has within result
+	 *
+	 * @param $exclude_hidden to to false to include hidden fields
+	 * @return Ref to self
+	 */
+	public function all_fields($exclude_hidden = true){
+		$fields = $this->api->readListMeta($this->list_name, $exclude_hidden);
+		foreach ($fields as $field) {
+			$this->fields[] = $field['name'];
+		}
+		return $this;
+	}
+	public function all_columns($exclude_hidden = true){ return $this->all_fields($exclude_hidden); }
+
+	/**
 	 * get
 	 * Runs the specified query and returns a usable result.
-	 * @return Array: Sharepoint List Data
+	 * @return Array: SharePoint List Data
 	 */
 	public function get () {
-		return $this->api->read($this->list_name, $this->limit, $this, $this->view);
+
+		// String = view, array = specific fields
+		$view = (sizeof($this->fields) === 0) ? $this->view : $this->fields;
+		
+		return $this->api->read($this->list_name, $this->limit, $this, $view);
 	}
 
 	/**
@@ -213,6 +251,26 @@ class QueryObjectService {
 			$xml .= $this->sort_caml;
 		}
 
+		return $xml;
+	}
+
+	/**
+	 * getOptionCAML
+	 * Combine and return the raw CAML data for the request options 
+	 * @return CAML Code (XML)
+	 */
+	public function getOptionCAML () {
+
+		$xml = '';
+
+		// if fields are specified
+		if(sizeof($this->fields) > 0) {
+			$xml .= $this->api->viewFieldsXML($this->fields);
+		}
+		
+		// If view, add to xml.
+		if($this->view !== NULL) $xml .= '<viewName>' . $this->view . '</viewName>';
+			
 		return $xml;
 	}
 }

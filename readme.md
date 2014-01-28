@@ -102,6 +102,14 @@ or
     $sp->query('<list_name>')->where('surname', '=', 'smith')->limit(10)->sort('age','DESC')->get();
 
 
+###### To return the first 5 items, including the columns "favroite_cake" and "favorite animal"
+
+    $sp->read('<list_name>', 5, NULL, array("favroite_cake", "favorite_animal")); 
+
+or
+
+    $sp->query('<list_name>')->fields(array("favroite_cake", "favorite_animal")->limit(5)->get();
+
 
 By default list item's are returned as arrays with lower case index's. If you would prefer the results to return as object's, before invoking any read operations use:
 
@@ -110,6 +118,7 @@ By default list item's are returned as arrays with lower case index's. If you wo
 Automatically making the attribute names lowercase can also be deactivated by using:
 
     $sp->lowercaseIndexs(FALSE);
+
 
 #### Querying a list
 The query method can be used when you need to specify a query that is to complex to be easily defined using the read methods. Queries are constructed using a number of (hopefully expressive) pseudo SQL methods.
@@ -121,6 +130,10 @@ If you for example wanted to query a list of pets and return all dogs below the 
 If you wanted to get the first 10 pets that were either cats or hamsters you could use:
 
     $sp->query('list of pets')->where('type','=','cat')->or_where('type','=','hamster')->limit(10)->get();
+
+If you need to return 5 items, but including all fields contained in a list, you can use. (pass false to all_fields to include hidden fields).
+
+    $sp->query('list of pets')->all_fields()->get();
 
 If you have a set of CAML for a specific advanced query you would like to run, you can pass it to the query object using:
 
@@ -206,7 +219,7 @@ Files can be attached to SharePoint list items using:
 
 The PHP SharePoint API contains a number of helper methods to make it easier to ensure certain values are in the correct format for some of SharePoints special data types.
 
-#### dateTime
+###### dateTime
 
 The dataTime method can either be passed a text based date
 
@@ -218,7 +231,7 @@ Or a unix timestamp
 
 And will return a value which can be stored in to SharePoints DateTime fields without issue.
 
-#### Lookup
+###### Lookup
 
 The lookup data type in SharePoint is for fields that reference a row in another list. In order to correctly populate these values you will need to know the ID of the row the value needs to reference.
 
@@ -228,7 +241,7 @@ If you do not know the name/title of the value you are storing the method will w
     
     $value = \Thybag\SharepointApi::lookup('3');
 
-#### Magic Lookup
+###### Magic Lookup
 
 If you are attempting to store a value in a "lookup" data type but for some reason only know the title/name of the item, not its ID, you can use the MagicLookup method to quickly look this value up and return it for you. This method will need to be passed both the items title & the list it is contained within.
 

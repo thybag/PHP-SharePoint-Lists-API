@@ -5,7 +5,7 @@ namespace Thybag\Auth;
  * SharePointOnlineAuth
  * Clone of the PHP SoapClient class, modified in order to allow transparent communication with
  * the SharePoint Online Web services.
- * 
+ *
  * @package Thybag\Auth
  */
 class SharePointOnlineAuth extends \SoapClient {
@@ -15,60 +15,60 @@ class SharePointOnlineAuth extends \SoapClient {
 
 	// Override do request method
 	public function __doRequest($request, $location, $action, $version, $one_way = false) {
-		
+
 		// Authenticate with SP online in order to get required authentication cookies
 		if (!$this->authCookies) $this->configureAuthCookies($location);
-		
+
 		// Set base headers
 		$headers = array();
 		$headers[] = "Content-Type: text/xml;";
 
-        $curl = curl_init($location);
+		$curl = curl_init($location);
 
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($curl, CURLOPT_POST, TRUE);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($curl, CURLOPT_POST, TRUE);
 
-        // Send request and auth cookies.
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-        curl_setopt($curl, CURLOPT_COOKIE, $this->authCookies); 
-     
-     	// Connection requires CURLOPT_SSLVERSION set to 3
-        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-        curl_setopt($curl, CURLOPT_SSLVERSION, 3);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+		// Send request and auth cookies.
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
+		curl_setopt($curl, CURLOPT_COOKIE, $this->authCookies);
 
-        // Useful for debugging
+ 		// Connection requires CURLOPT_SSLVERSION set to 3
+		curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+		curl_setopt($curl, CURLOPT_SSLVERSION, 3);
+		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+		// Useful for debugging
 		curl_setopt($curl, CURLOPT_VERBOSE,FALSE);
-        curl_setopt($curl, CURLOPT_HEADER, FALSE);
-        
-        // SharePoint Online requires the SOAPAction header set for ADD/EDIT and DELETE Operations.
-        // Failure to have this will result in a "Security Validation exception"
-        // @see http://weblogs.asp.net/jan/archive/2009/05/25/quot-the-security-validation-for-this-page-is-invalid-quot-when-calling-the-sharepoint-web-services.aspx
-        if( strpos($request, 'UpdateListItems') !== FALSE ) {
-    		$headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
-        }
+		curl_setopt($curl, CURLOPT_HEADER, FALSE);
 
-        // Add headers
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+		// SharePoint Online requires the SOAPAction header set for ADD/EDIT and DELETE Operations.
+		// Failure to have this will result in a "Security Validation exception"
+		// @see http://weblogs.asp.net/jan/archive/2009/05/25/quot-the-security-validation-for-this-page-is-invalid-quot-when-calling-the-sharepoint-web-services.aspx
+		if( strpos($request, 'UpdateListItems') !== FALSE ) {
+		  $headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
+		}
 
-        // Init the cURL
-        $response = curl_exec($curl);
-        
-        // Throw exceptions if there are any issues
-        if (curl_errno($curl)) throw new \SoapFault(curl_error($curl));
-		if ($response == '') throw new \SoapFault("No XML returned");
-     
+		// Add headers
+		curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+		// Init the cURL
+		$response = curl_exec($curl);
+
+		// Throw exceptions if there are any issues
+		if (curl_errno($curl)) throw new \SoapFault('Receiver', curl_error($curl));
+		if ($response == '') throw new \SoapFault('Receiver', "No XML returned");
+
 		// Close CURL
-        curl_close($curl);
-        
-        // Return?
-        if (!$one_way) return ($response);
+		curl_close($curl);
+
+		// Return?
+		if (!$one_way) return ($response);
 	}
 
 	/**
 	 * ConfigureAuthCookies
 	 * Authenticate with sharepoint online in order to get valid authentication cookies
-	 * 
+	 *
 	 * @param $location - Url of sharepoint list
 	 *
 	 * More info on method:
@@ -93,59 +93,59 @@ class SharePointOnlineAuth extends \SoapClient {
 
 		// Extract security token from XML
 		$xml = new \DOMDocument();
-	    $xml->loadXML($result);
-	    $xpath = new \DOMXPath($xml);
-	    $nodelist = $xpath->query("//wsse:BinarySecurityToken");
-	    foreach ($nodelist as $n){
-	        $token = $n->nodeValue;
-	        break;
-	    }
+		$xml->loadXML($result);
+		$xpath = new \DOMXPath($xml);
+		$nodelist = $xpath->query("//wsse:BinarySecurityToken");
+		foreach ($nodelist as $n){
+			$token = $n->nodeValue;
+			break;
+		}
 
-	    // Send token to SharePoint online in order to gain authentication cookies
-	    $result = $this->authCurl($endpoint."/_forms/default.aspx?wa=wsignin1.0", $token, true);
+		// Send token to SharePoint online in order to gain authentication cookies
+		$result = $this->authCurl($endpoint."/_forms/default.aspx?wa=wsignin1.0", $token, true);
 
-	    // Extract Authentication cookies from response & set them in to AuthCookies var
-	    $this->authCookies = $this->extractAuthCookies($result);
+		// Extract Authentication cookies from response & set them in to AuthCookies var
+		$this->authCookies = $this->extractAuthCookies($result);
 	}
 
 	/**
 	 * extractAuthCookies
 	 * Extract Authentication cookies from SP response & format in to usable cookie string
 	 *
-	 * @param $result cURL Response 
+	 * @param $result cURL Response
 	 * @return $cookie_payload string containing cookie data.
 	 */
 	protected function extractAuthCookies($result){
-		
-	    $authCookies = array();
-	    $cookie_payload = '';
 
-	    $header_array = explode("\r\n", $result);
+		$authCookies = array();
+		$cookie_payload = '';
 
-	    // Get the two auth cookies
-	    foreach($header_array as $header) {
-	        $loop = explode(":",$header);
-	        if($loop[0] == 'Set-Cookie') {
-	            $authCookies[] = $loop[1];
-	        }
-	    }
-	    unset($authCookies[0]); // No need for first cookie   
+		$header_array = explode("\r\n", $result);
 
-	    // Extract cookie name & payload and format in to cURL compatible string
-	    foreach($authCookies as $payload){
-	    	$e = strpos($payload, "=");
-	    	// Get name
-	    	$name = substr($payload, 0, $e);
-	    	// Get token
-	    	$content = substr($payload, $e+1);
-	    	$content = substr($content, 0, strpos($content, ";"));
+		// Get the two auth cookies
+		foreach($header_array as $header) {
+			$loop = explode(":",$header);
+			if($loop[0] == 'Set-Cookie') {
+				$authCookies[] = $loop[1];
+			}
+		}
+		unset($authCookies[0]); // No need for first cookie
 
-	    	// If not first cookie, add cookie seperator
-	    	if($cookie_payload !== '') $cookie_payload .= '; ';
+		// Extract cookie name & payload and format in to cURL compatible string
+		foreach($authCookies as $payload){
+			$e = strpos($payload, "=");
+			// Get name
+			$name = substr($payload, 0, $e);
+			// Get token
+			$content = substr($payload, $e+1);
+			$content = substr($content, 0, strpos($content, ";"));
 
-	    	// Add cookie to string
-	    	$cookie_payload .= $name.'='.$content;
-	    }
+			// If not first cookie, add cookie seperator
+			if($cookie_payload !== '') $cookie_payload .= '; ';
+
+			// Add cookie to string
+			$cookie_payload .= $name.'='.$content;
+		}
 
 	  	return $cookie_payload;
 	}
@@ -161,39 +161,39 @@ class SharePointOnlineAuth extends \SoapClient {
 	 */
 	protected function authCurl($url, $payload, $header = false){
 		$ch = curl_init();
-	    curl_setopt($ch,CURLOPT_URL,$url);
-	    curl_setopt($ch,CURLOPT_POST,1);
-	    curl_setopt($ch,CURLOPT_POSTFIELDS,  $payload);   
-	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	  	
+		curl_setopt($ch,CURLOPT_URL,$url);
+		curl_setopt($ch,CURLOPT_POST,1);
+		curl_setopt($ch,CURLOPT_POSTFIELDS,  $payload);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
 	  	curl_setopt($ch, CURLOPT_SSLVERSION, 3);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-	    
-	    if($header)  curl_setopt($ch, CURLOPT_HEADER, true); 
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-	    $result = curl_exec($ch);
+		if($header)  curl_setopt($ch, CURLOPT_HEADER, true);
 
-	    // catch error
-	    if($result === false) {
-	        throw new \SoapFault('Curl error: ' . curl_error($ch));
-	    }
-	    
-	    curl_close($ch);
+		$result = curl_exec($ch);
 
-	    return $result;
+		// catch error
+		if($result === false) {
+			throw new \SoapFault('Sender', 'Curl error: ' . curl_error($ch));
+		}
+
+		curl_close($ch);
+
+		return $result;
 	}
 
 	/**
 	 * Get the XML to request the security token
-	 * 
+	 *
 	 * @param string $username
 	 * @param string $password
 	 * @param string $endpoint
 	 * @return type string
 	 */
 	protected function generateSecurityToken($username, $password, $endpoint) {
-    return <<<TOKEN
+	return <<<TOKEN
     <s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
       xmlns:a="http://www.w3.org/2005/08/addressing"
       xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
