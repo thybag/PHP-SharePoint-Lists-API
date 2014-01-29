@@ -1061,9 +1061,9 @@ class SharePointAPI {
 	 * @param $id ID of item to find versions for
 	 * @return array | object
 	 */
-	public function getItemVersions ($list, $id, $exclude_hidden = true) {
-	    $fields = $this->readListMeta($list, $exclude_hidden);
-	    
+    public function getItemVersions ($list, $id, $exclude_hidden = true) {
+        $fields = $this->readListMeta($list, $exclude_hidden);
+        
         // Parse results
         $results = array();
         // Format data in to array or object
@@ -1076,23 +1076,25 @@ class SharePointAPI {
             
             // Get the versions for each field
             if(sizeof($field_versions) !== 0) {
-                foreach($field_versions as $key => $value) {
+                foreach($field_versions as $value) {
                     if($this->lower_case_indexs) {
-                        $results[$key][strtolower($field['name'])] = $value[strtolower($field['name'])];
+                        $results[$field['modified']][strtolower($field['name'])] = $value[strtolower($field['name'])];
                     } else {
-                        $results[$key][$field['name']] = $value[$field['name']];
+                        $results[$field['Modified']][$field['name']] = $value[$field['name']];
                     }
                 }
                 //Make object if needed
-                if ($this->returnType === 1) settype($results[$counter], "object");
+                if ($this->returnType === 1) settype($results[$field['modified']], "object");
             }
-		}
-
+        }
+        
+        $results = array_values($results);
+        
         // Add error array if stuff goes wrong.
         if (!isset($results)) $results = array('warning' => 'No data returned.');
-
-	    return $results;
-	}
+        
+        return $results;
+    }
 	
 	/**
 	 * getVersions
