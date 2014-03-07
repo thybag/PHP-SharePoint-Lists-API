@@ -478,6 +478,19 @@ class SharePointAPI {
 		return $this->writeMultiple($list_name, array($data));
 	}
 
+	/**
+	 * WriteToFolder
+	 * Create new item in a sharepoint list
+	 *
+	 * @param String $list_name Name of List
+         * @param String $folderPath Path of folder
+	 * @param Array $data Associative array describing data to store
+	 * @return Array
+	 */
+	public function writeToFolder ($list_name, $folderPath, array $data) {
+		return $this->writeMultipleToFolder($list_name, $folderPath, array($data));
+	}
+
 	// Alias (Identical to above)
 	public function add ($list_name, array $data) { return $this->write($list_name, $data); }
 	public function insert ($list_name, array $data) { return $this->write($list_name, $data); }
@@ -492,6 +505,19 @@ class SharePointAPI {
 	 */
 	public function writeMultiple ($list_name, array $items) {
 		return $this->modifyList($list_name, $items, 'New');
+	}
+
+	/**
+	 * WriteMultipleToFolder
+	 * Batch create new items in a sharepoint list and place them in specified folder
+	 *
+	 * @param String $list_name Name of List
+         * @param String $folderPath Path of folder
+	 * @param Array of arrays Associative array's describing data to store
+	 * @return Array
+	 */
+	public function writeMultipleToFolder ($list_name, $folderPath, array $items) {
+		return $this->modifyList($list_name, $items, 'New', $folderPath);
 	}
 
 	// Alias (Identical to above)
@@ -869,16 +895,22 @@ class SharePointAPI {
 	 * @param $method New/Update/Delete
 	 * @return Array|Object
 	 */
-	public function modifyList ($list_name, array $items, $method) {
+	public function modifyList ($list_name, array $items, $method, $folderPath = null) {
 		// Get batch XML
 		$commands = $this->prepBatch($items, $method);
+
+                $rootFolderAttr = '';
+                if($folderPath != null && $folderPath != '/') {
+                    $sitePath = substr($this->spWsdl, 0, strpos($this->spWsdl, '_vti_bin'));
+                    $rootFolderAttr = ' RootFolder="'.$sitePath.$list_name.'/'.$folderPath.'"';
+                }
 
 		// Wrap in CAML
 		$CAML = '
 		<UpdateListItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
 			<listName>' . $list_name . '</listName>
 			<updates>
-				<Batch ListVersion="1" OnError="Continue">
+				<Batch ListVersion="1" OnError="Continue"'.$rootFolderAttr.'>
 					' . $commands . '
 				</Batch>
 			</updates>
