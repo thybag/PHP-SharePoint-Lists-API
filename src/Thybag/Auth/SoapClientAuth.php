@@ -104,6 +104,7 @@ class SoapClientAuth extends \SoapClient {
 		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 
 		curl_setopt($ch, CURLOPT_USERPWD, $this->Username . ':' . $this->Password);
+		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
 		curl_setopt($ch, CURLOPT_SSLVERSION, 3);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
