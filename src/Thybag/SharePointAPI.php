@@ -835,12 +835,12 @@ class SharePointAPI {
 		$value = strtolower($value);
 
 		// Default is descending
-		$sort = 'false';
+		$sort = 'FALSE';
 
 		// Is value set to allow ascending sorting?
 		if ($value == 'asc' || $value == 'true' || $value == 'ascending') {
 			// Sort ascending
-			$sort = 'true';
+			$sort = 'TRUE';
 		}
 
 		// Return it
