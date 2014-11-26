@@ -640,6 +640,36 @@ class SharePointAPI {
 	}	
 
 	/**
+	 * deleteAttachment
+	 * Remove an attachment from a SharePoint list item
+	 *
+	 * @param $list_name Name of list
+	 * @param $list_item_id ID of record item is attached to
+	 * @param $url
+	 */
+	public function deleteAttachment ($list_name, $list_item_id, $url) {
+		// Wrap in CAML
+		$CAML = '
+		<DeleteAttachment xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+			<listName>' . $list_name . '</listName>
+			<listItemID>' . $list_item_id . '</listItemID>
+			<url>' . $url . '</url>
+		</DeleteAttachment>';
+
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			$this->soapClient->DeleteAttachment($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Return true on success
+		return true;
+	}
+
+	/**
 	 * getAttachment
 	 * Return an attachment from a SharePoint list item
 	 *
