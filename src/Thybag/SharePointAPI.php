@@ -7,7 +7,7 @@ namespace Thybag;
  * Simple PHP API for reading/writing and modifying SharePoint list items.
  *
  * @author Carl Saggs
- * @version 0.6.2
+ * @version 0.6.3
  * @licence MIT License
  * @source: http://github.com/thybag/PHP-SharePoint-Lists-API
  *
@@ -640,6 +640,36 @@ class SharePointAPI {
 	}	
 
 	/**
+	 * deleteAttachment
+	 * Remove an attachment from a SharePoint list item
+	 *
+	 * @param $list_name Name of list
+	 * @param $list_item_id ID of record item is attached to
+	 * @param $url
+	 */
+	public function deleteAttachment ($list_name, $list_item_id, $url) {
+		// Wrap in CAML
+		$CAML = '
+		<DeleteAttachment xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+			<listName>' . $list_name . '</listName>
+			<listItemID>' . $list_item_id . '</listItemID>
+			<url>' . $url . '</url>
+		</DeleteAttachment>';
+
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			$this->soapClient->DeleteAttachment($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Return true on success
+		return true;
+	}
+
+	/**
 	 * getAttachment
 	 * Return an attachment from a SharePoint list item
 	 *
@@ -1086,60 +1116,15 @@ class SharePointAPI {
     public function getColumnVersions ($list, $id, $field) { return $this->getFieldVersions($list, $id, $field); }
 	
 	/**
-	 * getItemVersions
-	 * Get previous versions of an item
-	 *
-	 * @param $list Name or GUID of list
-	 * @param $id ID of item to find versions for
-	 * @return array | object
-	 */
-	public function getItemVersions ($list, $id, $exclude_hidden = true) {
-	    $fields = $this->readListMeta($list, $exclude_hidden);
-	    
-        // Parse results
-        $results = array();
-        // Format data in to array or object
-        foreach ($fields as $counter => $field) {
-            // Modified always returns an error
-            if($field['name'] == 'Modified') { continue; }
-            
-            // Get all the fields
-            $field_versions = $this->getFieldVersions($list, $id, $field['name']);
-            
-            // Get the versions for each field
-            if(sizeof($field_versions) !== 0) {
-                foreach($field_versions as $key => $value) {
-                    if($this->lower_case_indexs) {
-                        $results[$key][strtolower($field['name'])] = $value[strtolower($field['name'])];
-                    } else {
-                        $results[$key][$field['name']] = $value[$field['name']];
-                    }
-                }
-                //Make object if needed
-                if ($this->returnType === 1) settype($results[$counter], "object");
-            }
-		}
-
-        // Add error array if stuff goes wrong.
-        if (!isset($results)) $results = array('warning' => 'No data returned.');
-
-	    return $results;
-	}
-	
-	/**
 	 * getVersions
-	 * Get previous versions of an item or field
+	 * Get previous versions of a field
 	 *
 	 * @param $list Name or GUID of list
 	 * @param $id ID of item to find versions for
 	 * @param $field optional name of column to get versions for
 	 * @return array | object
 	 */
-	public function getVersions ($list, $id, $field = null, $exclude_hidden = true) {
-	    if($field === null) {
-    	    return $this->getItemVersions($list, $id, $exclude_hidden);
-	    } else {
-	        return $this->getFieldVersions($list, $id, $field);
-	    }
+	public function getVersions ($list, $id, $field = null) {
+	    return $this->getFieldVersions($list, $id, $field);
 	}
 }
