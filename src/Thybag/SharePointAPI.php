@@ -1116,60 +1116,15 @@ class SharePointAPI {
     public function getColumnVersions ($list, $id, $field) { return $this->getFieldVersions($list, $id, $field); }
 	
 	/**
-	 * getItemVersions
-	 * Get previous versions of an item
-	 *
-	 * @param $list Name or GUID of list
-	 * @param $id ID of item to find versions for
-	 * @return array | object
-	 */
-	public function getItemVersions ($list, $id, $exclude_hidden = true) {
-	    $fields = $this->readListMeta($list, $exclude_hidden);
-	    
-        // Parse results
-        $results = array();
-        // Format data in to array or object
-        foreach ($fields as $counter => $field) {
-            // Modified always returns an error
-            if($field['name'] == 'Modified') { continue; }
-            
-            // Get all the fields
-            $field_versions = $this->getFieldVersions($list, $id, $field['name']);
-            
-            // Get the versions for each field
-            if(sizeof($field_versions) !== 0) {
-                foreach($field_versions as $key => $value) {
-                    if($this->lower_case_indexs) {
-                        $results[$key][strtolower($field['name'])] = $value[strtolower($field['name'])];
-                    } else {
-                        $results[$key][$field['name']] = $value[$field['name']];
-                    }
-                }
-                //Make object if needed
-                if ($this->returnType === 1) settype($results[$counter], "object");
-            }
-		}
-
-        // Add error array if stuff goes wrong.
-        if (!isset($results)) $results = array('warning' => 'No data returned.');
-
-	    return $results;
-	}
-	
-	/**
 	 * getVersions
-	 * Get previous versions of an item or field
+	 * Get previous versions of a field
 	 *
 	 * @param $list Name or GUID of list
 	 * @param $id ID of item to find versions for
 	 * @param $field optional name of column to get versions for
 	 * @return array | object
 	 */
-	public function getVersions ($list, $id, $field = null, $exclude_hidden = true) {
-	    if($field === null) {
-    	    return $this->getItemVersions($list, $id, $exclude_hidden);
-	    } else {
-	        return $this->getFieldVersions($list, $id, $field);
-	    }
+	public function getVersions ($list, $id, $field = null) {
+	    return $this->getFieldVersions($list, $id, $field);
 	}
 }
