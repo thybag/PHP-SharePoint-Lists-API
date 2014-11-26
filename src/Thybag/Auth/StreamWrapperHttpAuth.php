@@ -122,7 +122,6 @@ class StreamWrapperHttpAuth {
 			);
 		}
 
-		curl_setopt($this->curlHandle, CURLOPT_SSLVERSION, 3);
 		curl_setopt($this->curlHandle, CURLOPT_SSL_VERIFYPEER, FALSE);
 		curl_setopt($this->curlHandle, CURLOPT_SSL_VERIFYHOST, 2);
 
