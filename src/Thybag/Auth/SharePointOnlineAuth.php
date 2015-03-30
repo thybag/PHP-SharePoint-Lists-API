@@ -95,6 +95,9 @@ class SharePointOnlineAuth extends \SoapClient {
 		$xml->loadXML($result);
 		$xpath = new \DOMXPath($xml);
 
+		// Register SOAPFault namespace for error checking
+		$xpath->registerNamespace('psf', "http://schemas.microsoft.com/Passport/SoapServices/SOAPFault");
+
 		// Try to detect authentication errors
 		$errors = $xpath->query("//psf:internalerror");
 		if($errors->length > 0){
@@ -177,7 +180,7 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($ch,CURLOPT_POSTFIELDS,  $payload);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-	  	curl_setopt($ch, CURLOPT_SSLVERSION, 3);
+	  	curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
