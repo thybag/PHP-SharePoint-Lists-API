@@ -95,6 +95,9 @@ class SharePointOnlineAuth extends \SoapClient {
 		$xml->loadXML($result);
 		$xpath = new \DOMXPath($xml);
 
+		// Register SOAPFault namespace for error checking
+		$xpath->registerNamespace('psf', "http://schemas.microsoft.com/Passport/SoapServices/SOAPFault");
+
 		// Try to detect authentication errors
 		$errors = $xpath->query("//psf:internalerror");
 		if($errors->length > 0){
