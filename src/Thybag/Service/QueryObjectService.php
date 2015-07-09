@@ -186,12 +186,12 @@ class QueryObjectService {
 	 * @param	String $options "XML string of query options."
 	 * @return      Array: SharePoint List Data
 	 */
-	public function get ($options = null) {
+	public function get ($options = NULL) {
 
 		// String = view, array = specific fields
 		$view = (sizeof($this->fields) === 0) ? $this->view : $this->fields;
 		
-		return $this->api->read($this->list_name, $this->limit, $this, $view, null, $options);
+		return $this->api->read($this->list_name, $this->limit, $this, $view, NULL, $options);
 	}
 
 	/**
