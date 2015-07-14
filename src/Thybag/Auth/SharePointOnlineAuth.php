@@ -32,7 +32,8 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_COOKIE, $this->authCookies);
 
-		curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+        curl_setopt($curl, CURLOPT_SSLVERSION, 4);
+		curl_setopt($curl, CURLOPT_TIMEOUT, 100);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 
 		// Useful for debugging
@@ -89,7 +90,7 @@ class SharePointOnlineAuth extends \SoapClient {
 		// Send request and grab returned xml
 		$result = $this->authCurl("https://login.microsoftonline.com/extSTS.srf", $xml);
 
-		
+
 		// Extract security token from XML
 		$xml = new \DOMDocument();
 		$xml->loadXML($result);
@@ -180,9 +181,9 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($ch,CURLOPT_POSTFIELDS,  $payload);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-	  	curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+	  	curl_setopt($ch, CURLOPT_SSLVERSION, 4);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 100);
 
 		if($header)  curl_setopt($ch, CURLOPT_HEADER, true);
 
