@@ -1127,4 +1127,124 @@ class SharePointAPI {
 	public function getVersions ($list, $id, $field = null) {
 	    return $this->getFieldVersions($list, $id, $field);
 	}
+	
+
+    // params
+    public function copyIntoItems ($destinationUrl, $file_path, array $fields = null) {
+    // base64 encode file
+
+
+        $partes_ruta = pathinfo($file_path);
+
+        $file_name = $partes_ruta['basename'];
+        $destinationUrl = $destinationUrl . $file_name;
+
+        $attachment = base64_encode(file_get_contents($file_path));
+
+		// Wrap in CAML
+		$CAML = '<CopyIntoItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+					<SourceUrl>'.$file_name.'</SourceUrl>
+					<DestinationUrls>
+						<string>'.$destinationUrl.'</string>
+					</DestinationUrls>';
+		if($fields!=null && count($fields)>0)
+		{
+			$CAML .= ' <Fields>';
+			for ($i = 0; $i < count($fields); ++$i) {
+				$CAML .= ' <FieldInformation';
+				foreach ($fields[$i] as $key => $value) {
+					$CAML .= " ".$key."=\"".$value."\"";
+
+				}
+				$CAML .= ' />';
+			}
+
+
+
+			$CAML .= ' </Fields>';
+		}
+			$CAML .= '
+					<Stream>' . $attachment . '</Stream>
+				</CopyIntoItems>';
+
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+
+		/*
+		$xmlvar = '
+				POST /_vti_bin/copy.asmx HTTP/1.1
+				Host: madrilenaredgas.sharepoint.com
+				Content-Type: text/xml; charset=utf-8
+				Content-Length: length
+				SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/CopyIntoItems"
+
+				<?xml version="1.0" encoding="utf-8"?>
+				<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+					<soap:Body>
+						<CopyIntoItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+							<SourceUrl>string</SourceUrl>
+							<DestinationUrls>
+								<string>string</string>
+								<string>string</string>
+							</DestinationUrls>
+							<Fields>
+								<FieldInformation Type="Invalid or Integer or Text or Note or DateTime or Counter or Choice or Lookup or Boolean or Number or Currency or URL or Computed or Threading or Guid or MultiChoice or GridChoice or Calculated or File or Attachments or User or Recurrence or CrossProjectLink or ModStat or AllDayEvent or Geolocation or Error" DisplayName="string" InternalName="string" Id="guid" Value="string" />
+								<FieldInformation Type="Invalid or Integer or Text or Note or DateTime or Counter or Choice or Lookup or Boolean or Number or Currency or URL or Computed or Threading or Guid or MultiChoice or GridChoice or Calculated or File or Attachments or User or Recurrence or CrossProjectLink or ModStat or AllDayEvent or Geolocation or Error" DisplayName="string" InternalName="string" Id="guid" Value="string" />
+							</Fields>
+							<Stream>base64Binary</Stream>
+						</CopyIntoItems>
+					</soap:Body>
+				</soap:Envelope>
+				';
+			*/
+
+		// Attempt to run operation
+		try {
+			return $this->soapClient->CopyIntoItems($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Return true on success
+		return null;
+	}
+
+	 public function getItem ($sourceUrl) {
+		
+		// Wrap in CAML
+		$CAML = '<GetItem xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+					<Url>'.$sourceUrl.'</Url>
+				</GetItem>';
+	
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+	
+	
+		/*
+		$xmlvar = '
+				POST /_vti_bin/copy.asmx HTTP/1.1
+				Host: madrilena.sharepoint.com
+				Content-Type: text/xml; charset=utf-8
+				Content-Length: length
+				SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/GetItem"
+				
+				<?xml version="1.0" encoding="utf-8"?>
+				<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+				  <soap:Body>
+					<GetItem xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+					  <Url>string</Url>
+					</GetItem>
+				  </soap:Body>
+				</soap:Envelope>
+				';
+			*/
+	
+		// Attempt to run operation
+		try {
+			return $this->soapClient->GetItem($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+	
+		// Return true on success
+		return null;
+	 }
 }
