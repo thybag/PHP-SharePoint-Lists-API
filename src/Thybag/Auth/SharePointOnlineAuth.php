@@ -46,6 +46,9 @@ class SharePointOnlineAuth extends \SoapClient {
 		if( strpos($request, 'UpdateListItems') !== FALSE ) {
 		  $headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
 		}
+        if( strpos($request, 'CopyIntoItems') !== FALSE ) {
+            $headers[] =	'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/CopyIntoItems"';
+        }
 
 		// Add headers
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);

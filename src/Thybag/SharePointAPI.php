@@ -1127,4 +1127,71 @@ class SharePointAPI {
 	public function getVersions ($list, $id, $field = null) {
 	    return $this->getFieldVersions($list, $id, $field);
 	}
+	
+
+    public function copyIntoItems ($destinationUrl, $file_path, array $fields = null) {
+        // base64 encode file
+        $file_info = pathinfo($file_path);
+
+        $file_name = $file_info['basename'];
+        $destinationUrl = $destinationUrl . $file_name;
+
+        $attachment = base64_encode(file_get_contents($file_path));
+
+		// Wrap in CAML
+		$CAML = '<CopyIntoItems xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+					<SourceUrl>'.$file_name.'</SourceUrl>
+					<DestinationUrls>
+						<string>'.$destinationUrl.'</string>
+					</DestinationUrls>';
+		if($fields!=null && count($fields)>0)
+		{
+			$CAML .= ' <Fields>';
+			for ($i = 0; $i < count($fields); ++$i) {
+				$CAML .= ' <FieldInformation';
+				foreach ($fields[$i] as $key => $value) {
+					$CAML .= " ".$key."=\"".$value."\"";
+
+				}
+				$CAML .= ' />';
+			}
+
+			$CAML .= ' </Fields>';
+		}
+			$CAML .= '
+					<Stream>' . $attachment . '</Stream>
+				</CopyIntoItems>';
+
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			return $this->soapClient->CopyIntoItems($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+
+		// Return true on success
+		return null;
+	}
+
+	 public function getItem ($sourceUrl) {
+		
+		// Wrap in CAML
+		$CAML = '<GetItem xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+					<Url>'.$sourceUrl.'</Url>
+				</GetItem>';
+	
+		$xmlvar = new \SoapVar($CAML, XSD_ANYXML);
+
+		// Attempt to run operation
+		try {
+			return $this->soapClient->GetItem($xmlvar);
+		} catch (\SoapFault $fault) {
+			$this->onError($fault);
+		}
+	
+		// Return true on success
+		return null;
+	 }
 }
