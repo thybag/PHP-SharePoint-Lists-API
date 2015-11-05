@@ -147,7 +147,7 @@ class SharePointOnlineAuth extends \SoapClient {
 				$authCookies[] = $loop[1];
 			}
 		}
-		unset($authCookies[0]); // No need for first cookie
+		//unset($authCookies[0]); // No need for first cookie
 
 		// Extract cookie name & payload and format in to cURL compatible string
 		foreach($authCookies as $payload){
