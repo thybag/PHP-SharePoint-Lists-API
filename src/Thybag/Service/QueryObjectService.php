@@ -45,6 +45,11 @@ class QueryObjectService {
 	private $fields = array();
 
 	/**
+	 * CAML Options for query
+	 */
+	private $options = NULL;
+
+	/**
 	 * Construct
 	 * Setup new query Object
 	 *
@@ -136,6 +141,18 @@ class QueryObjectService {
 	}
 
 	/**
+	 * Options
+	 * Specify view to use when returning data.
+	 *
+	 * @param	String $options "XML string of query options."
+	 * @return	Ref to self
+	 */	 
+	public function options($options){
+		$this->options = $options;
+		return $this;
+	}
+
+	/**
 	 * Sort
 	 * Specify order data should be returned in.
 	 *
@@ -182,16 +199,15 @@ class QueryObjectService {
 	/**
 	 * get
 	 * Runs the specified query and returns a usable result.
-         * 
-	 * @param	String $options "XML string of query options."
-	 * @return      Array: SharePoint List Data
+	 * 
+	 * @return	Array: SharePoint List Data
 	 */
 	public function get ($options = NULL) {
 
 		// String = view, array = specific fields
 		$view = (sizeof($this->fields) === 0) ? $this->view : $this->fields;
 		
-		return $this->api->read($this->list_name, $this->limit, $this, $view, NULL, $options);
+		return $this->api->read($this->list_name, $this->limit, $this, $view, NULL, $this->options);
 	}
 
 	/**
