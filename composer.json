@@ -1,6 +1,6 @@
 {
 	"name": "thybag/php-sharepoint-lists-api",
-	"version": "0.6.2",
+	"version": "0.6.4",
 	"type": "library",
 	"description": "A simple PHP API to make working with SharePoint lists easy.",
 	"homepage": "https://github.com/thybag/PHP-SharePoint-Lists-API",

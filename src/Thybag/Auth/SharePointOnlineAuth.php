@@ -32,9 +32,7 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
 		curl_setopt($curl, CURLOPT_COOKIE, $this->authCookies);
 
- 		// Connection requires CURLOPT_SSLVERSION set to 3
 		curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-		curl_setopt($curl, CURLOPT_SSLVERSION, 3);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 
 		// Useful for debugging
@@ -91,14 +89,30 @@ class SharePointOnlineAuth extends \SoapClient {
 		// Send request and grab returned xml
 		$result = $this->authCurl("https://login.microsoftonline.com/extSTS.srf", $xml);
 
+		
 		// Extract security token from XML
 		$xml = new \DOMDocument();
 		$xml->loadXML($result);
 		$xpath = new \DOMXPath($xml);
+
+		// Register SOAPFault namespace for error checking
+		$xpath->registerNamespace('psf', "http://schemas.microsoft.com/Passport/SoapServices/SOAPFault");
+
+		// Try to detect authentication errors
+		$errors = $xpath->query("//psf:internalerror");
+		if($errors->length > 0){
+			$info = $errors->item(0)->childNodes;
+			throw new \Exception($info->item(1)->nodeValue, $info->item(0)->nodeValue);
+		}
+
 		$nodelist = $xpath->query("//wsse:BinarySecurityToken");
 		foreach ($nodelist as $n){
 			$token = $n->nodeValue;
 			break;
+		}
+
+		if(!isset($token)){
+			throw new \Exception("Unable to extract token from authentiction request");
 		}
 
 		// Send token to SharePoint online in order to gain authentication cookies
@@ -129,7 +143,6 @@ class SharePointOnlineAuth extends \SoapClient {
 				$authCookies[] = $loop[1];
 			}
 		}
-		unset($authCookies[0]); // No need for first cookie
 
 		// Extract cookie name & payload and format in to cURL compatible string
 		foreach($authCookies as $payload){
@@ -166,7 +179,7 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($ch,CURLOPT_POSTFIELDS,  $payload);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-	  	curl_setopt($ch, CURLOPT_SSLVERSION, 3);
+	  	curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 

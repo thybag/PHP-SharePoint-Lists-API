@@ -253,3 +253,9 @@ If you are attempting to store a value in a "lookup" data type but for some reas
 
 If you are getting this error it normally means that php_openssl (needed to curl https urls) is not enabled on your webserver. With many local websevers (such as XAMPP) you can simply open your php.ini file and uncomment the php_openssl line (ie. remove the ; before it).
 
+Note: If you are using SharePoint Online and having SSL errors, please pull the latest version which has changed from SSL v3 to TLS for sharepoint online connections - 
+
+Add this line to your `composer.json` file.
+
+     "thybag/php-sharepoint-lists-api": "dev-develop"
+
