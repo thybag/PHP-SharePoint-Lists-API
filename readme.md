@@ -255,7 +255,7 @@ If you are getting this error it normally means that php_openssl (needed to curl
 
 Note: If you are using SharePoint Online and having SSL errors, please pull the latest version which has changed from SSL v3 to TLS for sharepoint online connections - 
 
-Add this line to your `composer.jason` file.
+Add this line to your `composer.json` file.
 
      "thybag/php-sharepoint-lists-api": "dev-develop"
 
