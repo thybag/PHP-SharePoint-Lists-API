@@ -136,9 +136,10 @@ class SharePointAPI {
 	 * @param string $spUsername User account to authenticate with. (Must have read/write/edit permissions to given Lists)
 	 * @param string $spPassword Password to use with authenticating account.
 	 * @param string $spWsdl WSDL file for this set of lists ( sharepoint.url/subsite/_vti_bin/Lists.asmx?WSDL )
-	 * @param Whether to authenticate with NTLM
+	 * @param string $mode Authenticaton method to use (Defaults to basic auth, also supports SPONLINE & NTLM)
+	 * @param array $options Options for SoapClient
 	 */
-	public function __construct ($spUsername, $spPassword, $spWsdl, $mode = 'STANDARD') {
+	public function __construct ($spUsername, $spPassword, $spWsdl, $mode = 'STANDARD', $options = array()) {
 		// Check if required class is found
 		assert(class_exists('SoapClient'));
 
@@ -148,10 +149,9 @@ class SharePointAPI {
 		$this->spWsdl     = $spWsdl;
 
 		/*
-		 * General options
-		 * NOTE: You can set all these parameters, see class ExampleSharePointAPI for an example)
+		 * defaults
 		 */
-		$options = array(
+		$defaultOptions = array(
 			'trace'        => $this->soap_trace,
 			'exceptions'   => $this->soap_exceptions,
 			'keep_alive'   => $this->soap_keep_alive,
@@ -160,6 +160,8 @@ class SharePointAPI {
 			'compression'  => $this->soap_compression,
 			'encoding'     => $this->internal_encoding,
 		);
+		// $options will overwrite defaults if provided
+		$options = array_merge($defaultOptions, $options);
 
 		// Is login set?
 		if (!empty($this->spUsername)) {
