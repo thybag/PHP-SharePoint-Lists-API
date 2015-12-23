@@ -4,7 +4,7 @@ The **PHP SharePoint Lists API** is designed to make working with SharePoint Lis
 
 Using the PHP SharePoint Lists API, you can easily create, read, edit and delete from SharePoint list. The API also has support for querying list metadata and the list of lists.
 
-Known to work with: SharePoint 2007 and SharePoint online (experimental).
+Known to work with: SharePoint 2007, SharePoint 2013 and SharePoint online (experimental).
 
 ### Usage Instructions
 
