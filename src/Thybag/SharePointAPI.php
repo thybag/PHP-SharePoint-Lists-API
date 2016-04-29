@@ -772,7 +772,7 @@ class SharePointAPI {
 	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = NULL) {
 		// Get DOM instance and load XML
 		$dom = new \DOMDocument();
-		$dom->loadXML($rawXml);
+		$dom->loadXML($rawXml, (LIBXML_VERSION >= 20900) ? LIBXML_PARSEHUGE : null);
 
 		// Is namespace set?
 		if (!is_null($namespace)) {
