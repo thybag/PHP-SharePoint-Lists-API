@@ -82,7 +82,20 @@ or
 
     $sp->query('<list_name>')->where('surname', '=', 'smith')->and_where('age', '=', '40')->limit(5)->get();
 
+###### To only execute code if the query successfully found results
 
+If you have a query like this
+    
+    $result = $sp->read('<list_name>', 5, array('surname'=>'smith','age'=>40)); 
+
+You can write code to only execute if the query executes without warnings (it will give a warning if the query gets 0 results)
+
+    if(isset($result['warning'])) {
+        //Code to execute on warnings
+    }
+    else {
+        //Code to execute on successful queries
+    }
 
 ###### To return the first 10 items where the surname is "smith" using a particular view, call: (It appears views can only be referenced by their GUID)
 
@@ -191,10 +204,19 @@ You can get a full listing of all available lists within the connected SharePoin
 
     $sp->getLists();
 
-#### List metaData.
+#### List MetaData.
 You can access a lists meta data (Column configuration for example) by calling
 
     $sp->readListMeta('My List');
+
+If you are having trouble with the column name (for example, getting the error "One or more field types are not installed properly") then the metadata may help. Use the following line of code to get the metadata for your list, and use the column's "staticname"
+
+    print_r($sp->readListMeta('My List')); //Prints all metadata for 'My List'
+
+Alternatively, this line will show you just the column names for your list:
+
+    foreach($sp->readListMeta('My List') as $i){echo$i['staticname']."<br>";} //Prints just column names for 'My List'
+
 
 By default the method will attempt to strip out non-useful columns from the results, but keep "hidden". If you'd like the full results to be returned call:
 
@@ -214,6 +236,29 @@ Files can be attached to SharePoint list items using:
 
     $sp->addAttachment('<list>', '<id>', '<path_to_file>');
 
+#### Get the URL of a file attached to a SharePoint list item
+To read an attachment, you need the list name and the item id.
+
+    $sp->getAttachments('<list>', '<id>')
+
+This will return an array, with each item being a path to a file.
+
+### Download file attached to a SharePoint list 
+
+There is no built in way to download an attachment. If we can count on our user to be logged into a SharePoint account with access to the needed file, you can create a link to the attachment's URL using the above method. Otherwise, we can use CURL to download the attachment to our server.
+
+Before we can use CURL, we will need an authentication cookie. The easiest way to get this is with the cookies.txt extension for Chrome. Log in to SharePoint with the account you want to download the attachments with, and copy the cookie data from cookies.txt into a new file. **WARNING: This cookie will enable people to log into your SharePoint account, and should be kept secure.**
+
+Now that you have the cookie saved on your server, you can download attachments with the following code:
+
+    $ch = curl_init();
+    $url = "URL RETURNED BY getAttachments()";
+    curl_setopt($ch, CURLOPT_URL,$url);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);  
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt( $ch, CURLOPT_COOKIEFILE,"PATH TO YOUR COOKIE FILE");
+    $attachmentData = curl_exec($ch);
+    file_put_contents("PATH WHERE YOU WANT TO SAVE THE IMAGE", $attachmentData);
 
 ### Helper methods
 
@@ -247,9 +292,30 @@ If you are attempting to store a value in a "lookup" data type but for some reas
 
     $sp->magicLookup("Pepperoni Pizza", "Pizza List");
 
-## Trouble shooting
+## Troubleshooting
 
 * Unable to find the wrapper "https"
 
 If you are getting this error it normally means that php_openssl (needed to curl https urls) is not enabled on your webserver. With many local websevers (such as XAMPP) you can simply open your php.ini file and uncomment the php_openssl line (ie. remove the ; before it).
 
+* One or more field types are not installed properly
+
+This error can happen when you try to reference a column name that does not exist (for example, using the human-readable name rather than the internal name). Refer to the List MetaData section of this document for more help.
+
+* Not all fields are returned by query
+
+By default, sharepoint only returns fields that are visible in the default view. To get around this, use:
+
+    $sp->query('some list')->all_fields()->get();
+
+You can look at [issue #59](https://github.com/thybag/PHP-SharePoint-Lists-API/issues/59) for more detail.
+
+* Looks like we got no XML document
+
+This error should be fixed in the latest version.
+
+If you are getting this error while trying to connect to SharePoint Online, it is due to a recent change in the way Microsoft handles authentication cookies.  Open the file SharePointOnlineAuth.php and either comment out or remove the following line:
+
+    unset($authCookies[0]); // No need for first cookie
+
+You can look at [issue #83](https://github.com/thybag/PHP-SharePoint-Lists-API/issues/83) for more detail on this problem.
