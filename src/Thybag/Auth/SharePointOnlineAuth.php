@@ -40,13 +40,6 @@ class SharePointOnlineAuth extends \SoapClient {
 		curl_setopt($curl, CURLOPT_VERBOSE,FALSE);
 		curl_setopt($curl, CURLOPT_HEADER, FALSE);
 
-		// SharePoint Online requires the SOAPAction header set for ADD/EDIT and DELETE Operations.
-		// Failure to have this will result in a "Security Validation exception"
-		// @see http://weblogs.asp.net/jan/archive/2009/05/25/quot-the-security-validation-for-this-page-is-invalid-quot-when-calling-the-sharepoint-web-services.aspx
-		if( strpos($request, 'UpdateListItems') !== FALSE ) {
-		  $headers[] = 'SOAPAction: "http://schemas.microsoft.com/sharepoint/soap/UpdateListItems"';
-		}
-
 		// Add headers
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
