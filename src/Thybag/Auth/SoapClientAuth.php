@@ -92,6 +92,8 @@ class SoapClientAuth extends \SoapClient {
 		);
 
 		$this->__last_request_headers = $headers;
+		$location = $this->sanitizeUrl($location);
+
 		$ch = curl_init($location);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 
@@ -128,5 +130,15 @@ class SoapClientAuth extends \SoapClient {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Sanitize URL to request to Sharepoint
+	 *
+	 * @param string $url
+	 * @return type string
+	 */
+	protected function sanitizeUrl($url) {
+		return str_replace(" ", "%20", $url);
 	}
 }
