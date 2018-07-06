@@ -216,21 +216,21 @@ class QueryObjectService {
 	 *
 	 * @param	$rel	Relation AND/OR etc
 	 * @param	$col	column to test
-	 * @param	$test	comparison type (=,!+,<,>)
+	 * @param	$test	comparison type (=,!+,<,>,like)
 	 * @param	$value	value to test with
 	 * @return	Ref to self
 	 * @throws	\Exception	Thrown if $test is unrecognized
 	 */
 	private function addQueryLine ($rel, $col, $test, $value) {
 		// Check tests are usable
-		if (!in_array($test, array('!=', '>=', '<=', '<', '>', '='))) {
-			throw new \Exception('Unrecognized query parameter. Please use <,>,=,>=,<= or !=');
+		if (!in_array($test, array('!=', '>=', '<=', '<', '>', '=', 'like'))) {
+			throw new \Exception('Unrecognized query parameter. Please use <,>,=,>=,<=, != or like');
 		}
 
 		// Make sure $rel is lower-case
 		$rel = strtolower($rel);
 
-		$test = str_replace(array('!=', '>=', '<=', '<', '>', '='), array('Neq', 'Geq', 'Leq', 'Lt', 'Gt', 'Eq'), $test);
+		$test = str_replace(array('!=', '>=', '<=', '<', '>', '=', 'like'), array('Neq', 'Geq', 'Leq', 'Lt', 'Gt', 'Eq', 'Contains'), $test);
 
 		// Create caml
 		$caml = $this->where_caml;

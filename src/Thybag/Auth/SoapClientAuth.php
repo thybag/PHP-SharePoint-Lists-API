@@ -92,6 +92,8 @@ class SoapClientAuth extends \SoapClient {
 		);
 
 		$this->__last_request_headers = $headers;
+		$location = $this->sanitizeUrl($location);
+
 		$ch = curl_init($location);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 
@@ -109,8 +111,6 @@ class SoapClientAuth extends \SoapClient {
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-		curl_setopt($ch, CURLOPT_CERTINFO, TRUE);
 
 		$response = curl_exec($ch);
 
@@ -130,5 +130,15 @@ class SoapClientAuth extends \SoapClient {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Sanitize URL to request to Sharepoint
+	 *
+	 * @param string $url
+	 * @return type string
+	 */
+	protected function sanitizeUrl($url) {
+		return str_replace(" ", "%20", $url);
 	}
 }

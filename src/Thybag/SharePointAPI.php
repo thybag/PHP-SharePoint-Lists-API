@@ -772,7 +772,8 @@ class SharePointAPI {
 	private function getArrayFromElementsByTagName ($rawXml, $tag, $namespace = NULL) {
 		// Get DOM instance and load XML
 		$dom = new \DOMDocument();
-		$dom->loadXML($rawXml);
+
+		$dom->loadXML($rawXml, (LIBXML_VERSION >= 20900) ? LIBXML_PARSEHUGE : null);
 
 		// Is namespace set?
 		if (!is_null($namespace)) {
@@ -1096,7 +1097,7 @@ class SharePointAPI {
 
 	    // Load XML in to DOM document and grab all Fields
         $dom = new \DOMDocument();
-        $dom->loadXML($rawxml);
+        $dom->loadXML($rawxml, (LIBXML_VERSION >= 20900) ? LIBXML_PARSEHUGE : null);
         $nodes = $dom->getElementsByTagName("Version");
 
         // Parse results
