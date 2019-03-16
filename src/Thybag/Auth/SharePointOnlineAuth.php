@@ -133,7 +133,7 @@ class SharePointOnlineAuth extends \SoapClient {
 		// Get the two auth cookies
 		foreach($header_array as $header) {
 			$loop = explode(":",$header);
-			if (strtolower($loop[0]) == 'Set-Cookie') {
+			if (strtolower($loop[0]) == 'set-cookie') {
 				$authCookies[] = $loop[1];
 			}
 		}
