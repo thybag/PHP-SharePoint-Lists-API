@@ -168,6 +168,9 @@ As with the write method you can also run multiple update operations together by
 
 When using updateMultiple every item MUST have an ID.
 
+> :heavy_exclamation_mark: this method returns the contence of the row that has been updated. It does not always return the updated data, as SharePoint can take longer to update than this method takes to run.
+> It is therefore not recommended to use this as a check to ensure a successful update.
+
 #### Deleting Rows
 
 In order to delete a row, an ID as well as list name is required. To remove the record for James with the ID 5 you would use:
