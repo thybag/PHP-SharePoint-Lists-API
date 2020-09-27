@@ -416,7 +416,7 @@ class SharePointAPI {
 
 		// If query is required
 		if (!empty($xml_query)) {
-			$xml_options .= '<query><Query>' . $xml_query . '</Query></query>';
+			$xml_options .= '<Query>' . $xml_query . '</Query>';
 		}
 
 		/*
