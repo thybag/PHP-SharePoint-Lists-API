@@ -68,7 +68,7 @@ class QueryObjectService {
 	 * @param $col column to test
 	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function where ($col, $test, $val) {
 		return $this->addQueryLine('where', $col, $test, $val);
@@ -81,7 +81,7 @@ class QueryObjectService {
 	 * @param $col column to test
 	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function and_where ($col, $test, $val) {
 		return $this->addQueryLine('and', $col, $test, $val);
@@ -94,7 +94,7 @@ class QueryObjectService {
 	 * @param $col column to test
 	 * @param $test comparison type (=,!+,<,>)
 	 * @param $value to test with
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function or_where ($col, $test, $val) {
 		return $this->addQueryLine('or', $col, $test, $val);
@@ -106,7 +106,7 @@ class QueryObjectService {
 	 * This can be used when a user needs to perform queries to complex to be defined using the standard methods
 	 *
 	 * @param $caml - RAW CAML
-	 * @return Ref to self
+	 * @return $this
 	 * @throws \Exception - Thrown if standard where states are already in use.
 	 */
 	public function raw_where ($caml) {
@@ -121,7 +121,7 @@ class QueryObjectService {
 	 * Specify maximum amount of items to return. (if not set, default is used.)
 	 *
 	 * @param $limit number of items to return
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function limit ($limit) {
 		$this->limit = $limit;
@@ -133,7 +133,7 @@ class QueryObjectService {
 	 * Specify view to use when returning data.
 	 *
 	 * @param $view Name/GUID
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function using ($view) {
 		$this->view = $view;
@@ -145,8 +145,8 @@ class QueryObjectService {
 	 * Specify view to use when returning data.
 	 *
 	 * @param	String $options "XML string of query options."
-	 * @return	Ref to self
-	 */	 
+	 * @return	$this
+	 */
 	public function options($options){
 		$this->options = $options;
 		return $this;
@@ -158,7 +158,7 @@ class QueryObjectService {
 	 *
 	 * @param $sort_on column to sort on
 	 * @param $order Sort direction
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function sort ($sort_on, $order = 'desc') {
 		$queryString = '<FieldRef Name="'  .$sort_on . '" Ascending="' . $this->api->getSortFromValue($order) . '" />';
@@ -172,7 +172,7 @@ class QueryObjectService {
 	 * array of fields to include in results
 	 *
 	 * @param $fields array
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function fields (array $fields) {
 		$this->fields = $fields;
@@ -185,7 +185,7 @@ class QueryObjectService {
 	 * Attempt to include all fields row has within result
 	 *
 	 * @param $exclude_hidden to to false to include hidden fields
-	 * @return Ref to self
+	 * @return $this
 	 */
 	public function all_fields($exclude_hidden = true){
 		$fields = $this->api->readListMeta($this->list_name, $exclude_hidden);
@@ -218,7 +218,7 @@ class QueryObjectService {
 	 * @param	$col	column to test
 	 * @param	$test	comparison type (=,!+,<,>,like)
 	 * @param	$value	value to test with
-	 * @return	Ref to self
+	 * @return	$this
 	 * @throws	\Exception	Thrown if $test is unrecognized
 	 */
 	private function addQueryLine ($rel, $col, $test, $value) {
