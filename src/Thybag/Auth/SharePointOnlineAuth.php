@@ -21,7 +21,7 @@ class SharePointOnlineAuth extends \SoapClient {
 
 		// Set base headers
 		$headers = array();
-		$headers[] = "Content-Type: text/xml;";
+		$headers[] = "Content-Type: text/xml; charset=utf-8";
 		$headers[] = "SOAPAction: \"{$action}\"";
 
 		$curl = curl_init($location);
