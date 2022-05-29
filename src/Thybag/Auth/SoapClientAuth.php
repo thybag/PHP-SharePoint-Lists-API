@@ -64,7 +64,7 @@ class SoapClientAuth extends \SoapClient {
 			\Thybag\Auth\StreamWrapperHttpAuth::$Password = $this->Password;
 		}
 
-		parent::SoapClient($wsdl, ($options ? $options : array()));
+		parent::__construct($wsdl, ($options ? $options : array()));
 
 		stream_wrapper_restore('http');
 		if (in_array("https", $wrappers)) stream_wrapper_restore('https');
