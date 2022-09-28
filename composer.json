@@ -10,6 +10,10 @@
 			"email": "carl@userbag.co.uk"
 		}
 	],
+	"require": {
+		"php": "^7.1 || ^8.0",
+		"ext-soap": "*"
+        },
 	"autoload": {
 		"psr-0": {
 			"Thybag" : "src/"

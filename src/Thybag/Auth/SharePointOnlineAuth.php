@@ -14,7 +14,7 @@ class SharePointOnlineAuth extends \SoapClient {
 	private $authCookies = false;
 
 	// Override do request method
-	public function __doRequest($request, $location, $action, $version, $one_way = false) {
+	public function __doRequest($request, $location, $action, $version, $one_way = false): ?string {
 
 		// Authenticate with SP online in order to get required authentication cookies
 		if (!$this->authCookies) $this->configureAuthCookies($location);
