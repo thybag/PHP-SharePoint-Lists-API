@@ -13,8 +13,26 @@ class SharePointOnlineAuth extends \SoapClient {
 	// Authentication cookies
 	private $authCookies = false;
 
+	private $login;
+	private $password;
+
+	/**
+	 * Store username+password ourselves since they are private in
+	 * PHP 8.1's SoapClient.
+	 */
+	public function __construct($wsdl, $options) {
+		parent::__construct($wsdl, $options);
+
+		if (isset($options['login'])) {
+			$this->login = $options['login'];
+		}
+		if (isset($options['password'])) {
+			$this->password = $options['password'];
+		}
+	}
+
 	// Override do request method
-	public function __doRequest($request, $location, $action, $version, $one_way = false) {
+	public function __doRequest($request, $location, $action, $version, $one_way = false): ?string {
 
 		// Authenticate with SP online in order to get required authentication cookies
 		if (!$this->authCookies) $this->configureAuthCookies($location);
@@ -73,17 +91,13 @@ class SharePointOnlineAuth extends \SoapClient {
 		$location = parse_url($location);
 		$endpoint = 'https://'.$location['host'];
 
-		// get username & password
-		$login = $this->{'_login'};
-		$password = $this->{'_password'};
-
 		// Create XML security token request
-		$xml = $this->generateSecurityToken($login, $password, $endpoint);
+		$xml = $this->generateSecurityToken($this->login, $this->password, $endpoint);
 
 		// Send request and grab returned xml
 		$result = $this->authCurl("https://login.microsoftonline.com/extSTS.srf", $xml);
 
-		
+
 		// Extract security token from XML
 		$xml = new \DOMDocument();
 		$xml->loadXML($result);
